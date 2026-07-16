@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import tempfile
 import zipfile
 from pathlib import Path
@@ -132,8 +133,18 @@ async def auth_login(request: Request) -> RedirectResponse:
             except ValueError as exc:
                 return _error_redirect(str(exc))
 
+    updates = {}
     if client_id:
-        settings = settings.model_copy(update={"azure_app_client_id": client_id})
+        updates["azure_app_client_id"] = client_id
+
+    # Build the OAuth redirect URI from the port the browser actually used, so the
+    # tool works on any host port (e.g. when 8000 is busy and it fell back to 8080).
+    # An explicit AZURE_REDIRECT_URI env var still wins (for proxy/HTTPS setups).
+    if not os.environ.get("AZURE_REDIRECT_URI"):
+        updates["azure_redirect_uri"] = str(request.base_url).rstrip("/") + "/auth/callback"
+
+    if updates:
+        settings = settings.model_copy(update=updates)
 
     session = store.create()
     session.options = {
@@ -141,6 +152,7 @@ async def auth_login(request: Request) -> RedirectResponse:
         "experimental": params.get("experimental") == "1",
         "client_id": client_id or settings.azure_app_client_id,
         "profile": active_profile,
+        "redirect_uri": settings.azure_redirect_uri,
     }
 
     try:

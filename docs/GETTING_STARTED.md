@@ -84,6 +84,12 @@ secret is generated automatically, and your saved client profiles persist in the
   ```
 - **Want report files on your PC too?** add `-v "${PWD}/reports:/app/reports"` to the
   command (otherwise just download them from the web page).
+- **Port 8000 already in use?** map a different one, e.g. `-p 8080:8000`, and open
+  <http://localhost:8080>. The app adapts its sign-in redirect to that port
+  automatically — just make sure `http://localhost:8080/auth/callback` is one of
+  the redirect URIs on your Azure app (register a couple of fallbacks once, see
+  [AZURE_SETUP.md](AZURE_SETUP.md)). The `run.ps1` / `run.sh` launchers pick a free
+  port for you.
 
 > Requires the image to be published and public on GHCR — a one-time maintainer
 > step (see the README's "Releasing" section).

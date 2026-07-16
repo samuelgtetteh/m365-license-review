@@ -47,7 +47,12 @@ registration the tool uses for every client tenant. It takes about 10 minutes.
    - It must match `AZURE_REDIRECT_URI` in your `.env`. If you run the tool on a
      different port, change both to match.
 4. Click **Configure / Save**.
-5. Still under **Authentication**, set **Allow public client flows → Yes** and **Save**.
+5. **(Recommended) Add fallback ports.** So the tool still works if port 8000 is
+   busy, add a few more custom redirect URIs now:
+   `http://localhost:8080/auth/callback`, `http://localhost:8010/auth/callback`,
+   `http://localhost:8090/auth/callback`. The app automatically uses whichever
+   port it's opened on, and the launcher picks a free one from this set.
+6. Still under **Authentication**, set **Allow public client flows → Yes** and **Save**.
 
 > ⚠️ **Do not use the "Web" platform.** A Web redirect makes Entra require a client
 > secret during token exchange, which this app does not send — you'll get
