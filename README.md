@@ -18,6 +18,9 @@ It ships as a **Docker image** with two entry points over one shared engine:
 
 ## Quick start
 
+> New here? The **[full step-by-step Getting Started guide](docs/GETTING_STARTED.md)**
+> walks you from install → Azure setup → first report.
+
 You need **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** (or Docker Engine). No Python, no manual config.
 
 ### Easiest — one command
