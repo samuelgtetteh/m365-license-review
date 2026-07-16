@@ -172,6 +172,9 @@ Microsoft's official list; refresh them any time with
 | Symptom | Fix |
 |---------|-----|
 | `docker` not recognized | Docker Desktop isn't running / not on PATH. Start it; reopen the terminal. |
+| "name `/m365-review` is already in use" | The tool is already running (or a stopped copy exists). Either just open <http://localhost:8000>, or reset it: `docker rm -f m365-review` then run the command again. |
+| "port is already allocated" | Something is already on that port. Use another, e.g. `-p 8080:8000`, and open <http://localhost:8080> (register that port's callback in Azure). |
+| `docker scout` / "Log in with your Docker ID" | Harmless — an optional image-scan suggestion Docker prints. Ignore it. |
 | Sign-in: "No reply address" (`AADSTS500113`) | Add `http://localhost:8000/auth/callback` under **Mobile and desktop applications** (Step 2.6). |
 | Sign-in: "client_secret required" (`AADSTS7000218`) | The redirect was added under **Web**. Remove it and re-add under **Mobile and desktop applications**. |
 | 403 during the audit | A client admin needs to approve the consent screen (the six read scopes). |
