@@ -58,61 +58,63 @@ admin consents for their tenant the first time they sign in.
 
 ## Step 3 — Start the tool
 
-Pick **one** of the options below.
+Pick **one** of the options below. **Option A needs nothing but Docker** — no
+files to download — so it's all you need if you only have this document.
 
-### Option A — Prebuilt image (recommended; no build, needs internet)
+### Option A — Just run it (recommended: only Docker + internet, no files)
 
-1. Download `docker-compose.yml` and the `config/` folder from the project (or
-   clone the repo).
-2. In that folder, tell it which image to use, then start:
+Run this single command (same on Windows PowerShell, macOS, and Linux). It pulls
+the published image, configures itself, and starts:
 
-   **Windows (PowerShell):**
-   ```powershell
-   $env:M365_IMAGE = "ghcr.io/samuelgtetteh/m365-license-review:latest"
-   docker compose pull
-   docker compose up -d
-   ```
-   **macOS / Linux:**
-   ```bash
-   export M365_IMAGE=ghcr.io/samuelgtetteh/m365-license-review:latest
-   docker compose pull
-   docker compose up -d
-   ```
+```
+docker run -d --name m365-review -p 8000:8000 -v m365_data:/app/data ghcr.io/samuelgtetteh/m365-license-review:latest
+```
 
-### Option B — One command (builds locally the first time)
+Then open <http://localhost:8000>. That's it — no compose file, no config
+folder, nothing to edit. The SKU price list is built into the image, the session
+secret is generated automatically, and your saved client profiles persist in the
+`m365_data` volume across restarts.
 
-Clone the repo, then from its folder:
+- **Stop it:** `docker stop m365-review`  ·  **start again:** `docker start m365-review`
+- **Update to a newer version:**
+  ```
+  docker pull ghcr.io/samuelgtetteh/m365-license-review:latest
+  docker rm -f m365-review
+  # then run the same "docker run …" command again
+  ```
+- **Want report files on your PC too?** add `-v "${PWD}/reports:/app/reports"` to the
+  command (otherwise just download them from the web page).
+
+> Requires the image to be published and public on GHCR — a one-time maintainer
+> step (see the README's "Releasing" section).
+
+### Option B — From the cloned repo (one command)
+
+If you cloned the whole repository, from its folder:
 
 - **Windows:** double-click `run.ps1`, or in PowerShell: `./run.ps1`
 - **macOS / Linux:** `./run.sh`
 
-This checks Docker, starts the tool, and opens your browser automatically.
+This checks Docker, starts the tool (building the image the first time), and opens
+your browser automatically. Equivalent manual form: `docker compose up -d`.
 
-### Option C — Plain Docker Compose (builds locally)
+### Option C — Offline / USB (no internet on the target machine)
 
-From the project folder:
-```bash
-docker compose up -d      # first run builds the image (~2 min)
+On a machine that already has the image, export it to a file:
 ```
-
-### Option D — Offline / USB (no internet on the target machine)
-
-On a machine that has the image, export it:
-```powershell
-docker save -o m365-license-review.tar m365-license-review:local
+docker save -o m365-license-review.tar ghcr.io/samuelgtetteh/m365-license-review:latest
 ```
-Copy `m365-license-review.tar`, `docker-compose.yml`, and `config/` to the USB.
-On the target machine (Docker installed):
-```powershell
+Copy `m365-license-review.tar` to the USB. On the target machine (Docker installed):
+```
 docker load -i m365-license-review.tar
-docker compose up -d
+docker run -d --name m365-review -p 8000:8000 -v m365_data:/app/data ghcr.io/samuelgtetteh/m365-license-review:latest
 ```
 
 **All options end the same way:** the app is running at
-<http://localhost:8000>. There's nothing to configure — the session secret is
-generated automatically and the client ID is entered in the web page.
+<http://localhost:8000>, with nothing to configure. The client ID is entered in
+the web page (next step).
 
-To stop it later: `docker compose down`.
+To stop it later: `docker stop m365-review` (Option A/C) or `docker compose down` (Option B).
 
 ---
 
