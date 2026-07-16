@@ -1,0 +1,36 @@
+# Keep the build context (and image) lean and free of secrets / client data.
+.git
+.gitignore
+.github
+.env
+.env.*
+!.env.example
+reports/
+data/
+*.xlsx
+*.docx
+*.db
+*.sqlite*
+
+# Python caches / build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Dev-only material not needed at runtime
+tests/
+notebooks/
+docs/
+scripts/
+*.md
+!README.md
+.ipynb_checkpoints/
+.vscode/
+.idea/

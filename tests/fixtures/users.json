@@ -1,0 +1,102 @@
+{
+  "value": [
+    {
+      "id": "u-alice",
+      "displayName": "Alice Active",
+      "userPrincipalName": "alice@contoso.com",
+      "mail": "alice@contoso.com",
+      "accountEnabled": true,
+      "userType": "Member",
+      "createdDateTime": "2023-01-01T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e3-0000-0000-0000-000000000001" }],
+      "signInActivity": {
+        "lastSignInDateTime": "2026-07-10T09:00:00Z",
+        "lastNonInteractiveSignInDateTime": "2026-07-15T06:00:00Z"
+      }
+    },
+    {
+      "id": "u-bob",
+      "displayName": "Bob Disabled",
+      "userPrincipalName": "bob@contoso.com",
+      "mail": "bob@contoso.com",
+      "accountEnabled": false,
+      "userType": "Member",
+      "createdDateTime": "2022-05-05T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e5-0000-0000-0000-000000000002" }],
+      "signInActivity": {
+        "lastSignInDateTime": "2025-01-01T09:00:00Z",
+        "lastNonInteractiveSignInDateTime": "2025-01-02T09:00:00Z"
+      }
+    },
+    {
+      "id": "u-carol",
+      "displayName": "Carol Stale",
+      "userPrincipalName": "carol@contoso.com",
+      "mail": "carol@contoso.com",
+      "accountEnabled": true,
+      "userType": "Member",
+      "createdDateTime": "2021-03-03T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e3-0000-0000-0000-000000000001" }],
+      "signInActivity": {
+        "lastSignInDateTime": "2025-12-28T09:00:00Z",
+        "lastNonInteractiveSignInDateTime": "2025-12-28T09:00:00Z"
+      }
+    },
+    {
+      "id": "u-dave",
+      "displayName": "Dave Never",
+      "userPrincipalName": "dave@contoso.com",
+      "mail": "dave@contoso.com",
+      "accountEnabled": true,
+      "userType": "Member",
+      "createdDateTime": "2025-09-19T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e5-0000-0000-0000-000000000002" }],
+      "signInActivity": {
+        "lastSignInDateTime": null,
+        "lastNonInteractiveSignInDateTime": null
+      }
+    },
+    {
+      "id": "u-eve",
+      "displayName": "Eve NewHire",
+      "userPrincipalName": "eve@contoso.com",
+      "mail": "eve@contoso.com",
+      "accountEnabled": true,
+      "userType": "Member",
+      "createdDateTime": "2026-07-11T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e3-0000-0000-0000-000000000001" }],
+      "signInActivity": {
+        "lastSignInDateTime": null,
+        "lastNonInteractiveSignInDateTime": null
+      }
+    },
+    {
+      "id": "u-frank",
+      "displayName": "Frank Guest",
+      "userPrincipalName": "frank_partner.com#EXT#@contoso.onmicrosoft.com",
+      "mail": "frank@partner.com",
+      "accountEnabled": true,
+      "userType": "Guest",
+      "createdDateTime": "2024-06-01T00:00:00Z",
+      "assignedLicenses": [{ "skuId": "sku-e3-0000-0000-0000-000000000001" }],
+      "signInActivity": {
+        "lastSignInDateTime": "2026-07-01T09:00:00Z",
+        "lastNonInteractiveSignInDateTime": "2026-07-01T09:00:00Z"
+      }
+    },
+    {
+      "id": "u-grace",
+      "displayName": "Grace Unlicensed",
+      "userPrincipalName": "grace@contoso.com",
+      "mail": "grace@contoso.com",
+      "accountEnabled": true,
+      "userType": "Member",
+      "createdDateTime": "2020-01-01T00:00:00Z",
+      "assignedLicenses": [],
+      "signInActivity": {
+        "lastSignInDateTime": "2026-07-14T09:00:00Z",
+        "lastNonInteractiveSignInDateTime": "2026-07-14T09:00:00Z"
+      }
+    }
+  ]
+}

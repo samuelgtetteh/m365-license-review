@@ -1,0 +1,12 @@
+# Normalize line endings so scripts work cross-platform.
+* text=auto eol=lf
+
+# Windows-only script keeps CRLF.
+*.ps1 text eol=crlf
+# Shell scripts MUST be LF (CRLF breaks the shebang on macOS/Linux).
+*.sh text eol=lf
+
+# Treat generated report formats as binary if ever committed.
+*.xlsx binary
+*.docx binary
+*.png binary

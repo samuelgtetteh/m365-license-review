@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confirm tenant — M365 License Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Confirm the tenant</h1>
+      <p class="sub">Check this is the client you intend to audit before proceeding.</p>
+    </header>
+
+    <section class="card">
+      <h2>Signed in to</h2>
+      <dl class="kv">
+        <dt>Tenant</dt><dd><strong>{{ tenant_display_name }}</strong></dd>
+        <dt>Tenant ID</dt><dd><code>{{ tenant_id }}</code></dd>
+        <dt>Signed in as</dt><dd>{{ username or "—" }}</dd>
+      </dl>
+
+      <form action="/run" method="post">
+        <p class="hint">
+          Formats: {{ options.get("formats") | join(", ") }} &middot;
+          Experimental rules: {{ "on" if options.get("experimental") else "off" }}
+        </p>
+        <button type="submit" class="primary">Proceed with audit &rarr;</button>
+        <a href="/logout" class="ghost-link">Cancel &amp; sign out</a>
+      </form>
+    </section>
+
+    <section class="card muted">
+      <p class="hint">
+        This tool is read-only. Proceeding reads license, user, and usage data
+        and produces a report; it makes no changes to the tenant.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

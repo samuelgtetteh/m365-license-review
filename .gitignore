@@ -1,0 +1,58 @@
+# --- Secrets & config (NEVER commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Internal build log (contains real client IDs / tenant names) ---
+PROGRESS.md
+
+# --- Generated reports (may contain client PII) ---
+reports/
+*.xlsx
+*.docx
+# keep sample/fixture outputs explicitly if ever needed:
+!tests/fixtures/**/*.xlsx
+
+# --- SQLite profiles database (contains client IDs + tenant names) ---
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# --- Jupyter notebook outputs (may contain tenant data) ---
+# Outputs are stripped via nbstripout before commit; this is a backstop.
+.ipynb_checkpoints/
+notebooks/**/output/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# --- Tooling ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Claude Code local harness config ---
+.claude/
+
+# --- Internal handoff spec (not for public repo) ---
+m365_license_tool_handoff.md

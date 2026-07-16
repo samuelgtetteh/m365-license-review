@@ -1,0 +1,32 @@
+{
+  "value": [
+    {
+      "skuId": "sku-e3-0000-0000-0000-000000000001",
+      "skuPartNumber": "SPE_E3",
+      "capabilityStatus": "Enabled",
+      "consumedUnits": 20,
+      "prepaidUnits": { "enabled": 25, "suspended": 0, "warning": 0 }
+    },
+    {
+      "skuId": "sku-e5-0000-0000-0000-000000000002",
+      "skuPartNumber": "SPE_E5",
+      "capabilityStatus": "Enabled",
+      "consumedUnits": 3,
+      "prepaidUnits": { "enabled": 10, "suspended": 0, "warning": 0 }
+    },
+    {
+      "skuId": "sku-exo1-0000-0000-0000-00000000003",
+      "skuPartNumber": "EXCHANGESTANDARD",
+      "capabilityStatus": "Enabled",
+      "consumedUnits": 5,
+      "prepaidUnits": { "enabled": 5, "suspended": 0, "warning": 0 }
+    },
+    {
+      "skuId": "sku-unknown-0000-0000-0000-0000000004",
+      "skuPartNumber": "SOME_NEW_ADDON",
+      "capabilityStatus": "Enabled",
+      "consumedUnits": 1,
+      "prepaidUnits": { "enabled": 4, "suspended": 0, "warning": 0 }
+    }
+  ]
+}

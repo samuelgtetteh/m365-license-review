@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Running audit — M365 License Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Auditing {{ tenant_display_name }}</h1>
+      <p class="sub">Reading license, user, and usage data (read-only)…</p>
+    </header>
+
+    <section class="card">
+      <div class="progress-track"><div id="bar" class="progress-bar"></div></div>
+      <p id="label" class="hint">Starting…</p>
+      <div id="err" class="banner warn" style="display:none"></div>
+    </section>
+  </main>
+
+  <script>
+    const bar = document.getElementById('bar');
+    const label = document.getElementById('label');
+    const err = document.getElementById('err');
+    const es = new EventSource('/run/stream');
+
+    es.addEventListener('progress', (e) => {
+      const d = JSON.parse(e.data);
+      bar.style.width = Math.round(d.fraction * 100) + '%';
+      label.textContent = d.label + '…';
+    });
+    es.addEventListener('done', (e) => {
+      const d = JSON.parse(e.data);
+      es.close();
+      window.location.href = d.redirect;
+    });
+    es.addEventListener('error', (e) => {
+      es.close();
+      let msg = 'The audit failed.';
+      try { msg = JSON.parse(e.data).message || msg; } catch (_) {}
+      err.style.display = 'block';
+      err.innerHTML = '<strong>Error.</strong> ' + msg + ' <a href="/">Start again</a>';
+    });
+  </script>
+</body>
+</html>

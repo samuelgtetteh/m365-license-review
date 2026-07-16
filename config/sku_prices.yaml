@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------------
+# SKU price map — skuPartNumber : monthly per-user price in USD
+# ---------------------------------------------------------------------------
+# These are Microsoft PUBLIC LIST PRICES (annual-commitment, monthly billing),
+# seeded as a starting point. They are NOT your CSP rate card.
+#
+# >>> UPDATE QUARTERLY <<<  Replace with your CSP/partner pricing for accurate
+# savings figures. The `sku-check` command / page flags SKUs found in a tenant
+# that are missing from this file.
+#
+# Lookup key = `skuPartNumber` from GET /subscribedSkus.
+# If a SKU is missing here, the tool still reports it but shows "?" for dollars.
+# ---------------------------------------------------------------------------
+
+# --- Microsoft 365 (formerly Office 365 + EMS + Windows) suites ---
+SPE_E3: 36.00                    # Microsoft 365 E3
+SPE_E5: 57.00                    # Microsoft 365 E5
+SPE_F1: 8.00                     # Microsoft 365 F3
+SPB: 22.00                       # Microsoft 365 Business Premium
+
+# --- Office 365 suites ---
+STANDARDPACK: 10.00              # Office 365 E1
+ENTERPRISEPACK: 23.00            # Office 365 E3
+ENTERPRISEPREMIUM: 38.00         # Office 365 E5
+O365_BUSINESS_ESSENTIALS: 6.00   # Microsoft 365 Business Basic
+O365_BUSINESS_PREMIUM: 12.50     # Microsoft 365 Business Standard
+O365_BUSINESS: 8.25              # Microsoft 365 Apps for business
+OFFICESUBSCRIPTION: 12.00        # Microsoft 365 Apps for enterprise
+
+# --- Exchange ---
+EXCHANGESTANDARD: 4.00           # Exchange Online (Plan 1)
+EXCHANGEENTERPRISE: 8.00         # Exchange Online (Plan 2)
+
+# --- Add-ons commonly seen alongside suites ---
+POWER_BI_PRO: 10.00              # Power BI Pro
+EMS: 10.60                       # Enterprise Mobility + Security E3
+EMSPREMIUM: 16.40                # Enterprise Mobility + Security E5

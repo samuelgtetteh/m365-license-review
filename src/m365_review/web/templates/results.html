@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Results — M365 License Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Audit complete</h1>
+      <p class="sub">{{ s.tenant }} &middot; <code>{{ s.tenant_id }}</code></p>
+    </header>
+
+    <section class="card">
+      <h2>License optimization summary</h2>
+      <div class="stat-row">
+        <div class="stat">
+          <div class="stat-num">${{ "%.2f"|format(s.monthly) }}</div>
+          <div class="stat-lbl">Estimated monthly savings</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">${{ "%.2f"|format(s.annual) }}</div>
+          <div class="stat-lbl">Estimated annual savings</div>
+        </div>
+        <div class="stat">
+          <div class="stat-num">{{ s.findings }}</div>
+          <div class="stat-lbl">Findings</div>
+        </div>
+      </div>
+      <p class="hint">
+        Severity — High: {{ s.severity.high }} &middot; Medium: {{ s.severity.medium }}
+        &middot; Low: {{ s.severity.low }} &middot; Info: {{ s.severity.info }}
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Download report</h2>
+      <div class="dl-row">
+        {% for fmt in formats %}
+          <a class="dl-btn" href="/download/{{ fmt }}">{{ fmt|upper }}</a>
+        {% endfor %}
+        {% if formats|length > 1 %}
+          <a class="dl-btn primary-dl" href="/download/all">All (.zip)</a>
+        {% endif %}
+      </div>
+      <p class="hint">Reports may contain client PII — store them in an access-controlled location.</p>
+    </section>
+
+    <section class="card muted">
+      <a href="/logout">Sign out &amp; audit another tenant &rarr;</a>
+    </section>
+  </main>
+</body>
+</html>

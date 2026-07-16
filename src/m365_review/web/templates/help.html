@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help — M365 License Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Help &amp; guidance</h1>
+      <p class="sub">Everything you need to run a license review &middot; v{{ version }}</p>
+      <p><a href="/">&larr; Back to the tool</a></p>
+    </header>
+
+    <nav class="card toc">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#what">What this tool does</a></li>
+        <li><a href="#steps">Running a review, step by step</a></li>
+        <li><a href="#formats">Output formats</a></li>
+        <li><a href="#rules">What we check (the rules)</a></li>
+        <li><a href="#cli">Using the command line</a></li>
+        <li><a href="#privacy">Privacy, security &amp; read-only guarantee</a></li>
+        <li><a href="#trouble">Troubleshooting</a></li>
+      </ul>
+    </nav>
+
+    <section class="card" id="what">
+      <h2>What this tool does</h2>
+      <p>It signs in to a single client Microsoft&nbsp;365 tenant, reads how many
+         licenses are owned versus actually used, and produces a prioritized
+         <strong>license optimization report</strong> with estimated monthly and
+         annual savings. It is strictly read-only — it never changes anything.</p>
+    </section>
+
+    <section class="card" id="steps">
+      <h2>Running a review, step by step</h2>
+      <ol class="steps">
+        <li><strong>Choose a profile or add one.</strong> Pick a saved client from
+            the dropdown, or add a new one by giving it a name plus the Azure client
+            ID — it’s saved so next time you just pick the name.</li>
+        <li><strong>Choose options</strong> on the home page: output formats and
+            whether to include experimental rules.</li>
+        <li><strong>Sign in.</strong> Click “Sign in to a client tenant”. You’ll be
+            sent to Microsoft — sign in as a <em>client tenant admin</em>. First time
+            for a tenant, you’ll approve a read-only consent screen.</li>
+        <li><strong>Confirm the tenant.</strong> Check the tenant name and ID shown
+            match the client you intend to audit, then click “Proceed”.</li>
+        <li><strong>Wait for the audit.</strong> A progress bar shows each step
+            (reading identity, licenses, users, analyzing, writing).</li>
+        <li><strong>Download.</strong> On the results page, download any format or a
+            zip of all of them.</li>
+      </ol>
+      <p class="hint">The tenant-confirmation step is deliberate — it prevents
+         accidentally auditing the wrong client.</p>
+    </section>
+
+    <section class="card" id="formats">
+      <h2>Output formats</h2>
+      <ul>
+        <li><strong>Excel (.xlsx)</strong> — summary, a License Optimization sheet,
+            license inventory, per-rule detail sheets, and a hidden raw-data sheet.</li>
+        <li><strong>Word (.docx)</strong> — a client-facing narrative report led by
+            the optimization summary.</li>
+        <li><strong>JSON</strong> — the full structured result for automation or
+            record-keeping.</li>
+      </ul>
+      <p>Files are named <code>{tenant}_{date}.{ext}</code>.</p>
+    </section>
+
+    <section class="card" id="rules">
+      <h2>What we check (v1 rules)</h2>
+      <table class="help-table">
+        <tr><th>Rule</th><th>Finding</th></tr>
+        <tr><td>R1</td><td>Licenses assigned to <strong>disabled</strong> user accounts.</td></tr>
+        <tr><td>R2</td><td>Licenses on users with <strong>no sign-in in 90 days</strong>
+            (new accounts under 30 days are excluded). Needs Azure&nbsp;AD&nbsp;P1;
+            without it, affected users are listed for manual review instead.</td></tr>
+        <tr><td>R3</td><td><strong>Unassigned purchased licenses</strong> — seats paid
+            for but not assigned.</td></tr>
+      </table>
+      <p class="hint">Savings are estimates from the price list in
+         <code>config/sku_prices.yaml</code>. Always confirm before acting.</p>
+    </section>
+
+    <section class="card" id="cli">
+      <h2>Using the command line</h2>
+      <p>The CLI is an optional alternative to this web page — handy for scripting or
+         automation. It runs <strong>inside the Docker container</strong>, not on your
+         computer directly, so <code>m365-review</code> is <em>not</em> a command on your
+         host shell (running it there gives “term not recognized”). Invoke it through
+         <code>docker&nbsp;compose&nbsp;run</code> instead.</p>
+
+      <h3>Step by step</h3>
+      <ol class="steps">
+        <li>Open a terminal in the project folder (where <code>docker-compose.yml</code> lives).</li>
+        <li>Prefix each command with <code>docker compose run --rm m365-review</code>, e.g.:
+          <pre><code>docker compose run --rm m365-review m365-review run --profile "Contoso"</code></pre>
+        </li>
+        <li>Because the container has no browser, sign-in switches to <strong>device code</strong>
+            automatically: it prints a short code and the URL
+            <code>https://microsoft.com/devicelogin</code>. Open that in any browser, enter
+            the code, and sign in as the client tenant admin.</li>
+        <li>Confirm the tenant when prompted; the audit runs. Reports are written to the
+            <code>reports/</code> folder and saved profiles live in <code>data/</code>
+            (both persist on your machine).</li>
+      </ol>
+
+      <h3>Common commands</h3>
+      <pre><code># run an audit (all formats) reusing a saved profile
+docker compose run --rm m365-review m365-review run --profile "Contoso"
+
+# choose formats / include experimental rules
+docker compose run --rm m365-review m365-review run --format xlsx --format json
+docker compose run --rm m365-review m365-review run --enable-experimental-rules -v
+
+# list tenant SKUs and flag any missing a price
+docker compose run --rm m365-review m365-review sku-check --profile "Contoso"
+
+# manage saved client profiles
+docker compose run --rm m365-review m365-review profiles list
+docker compose run --rm m365-review m365-review profiles add "Contoso" -c &lt;client-id&gt;</code></pre>
+
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>Device-code sign-in requires <strong>“Allow public client flows: Yes”</strong> on
+            the app registration (Authentication → Settings tab). If you see
+            <code>AADSTS700016</code> or <code>AADSTS7000218</code>, enable that toggle.</li>
+        <li>Device code also needs the <strong>client tenant</strong> named up front (pass
+            <code>--tenant contoso.com</code> or a tenant ID, or save it on the profile).
+            Without it you'll get <code>AADSTS50059</code>.</li>
+      </ul>
+
+      <div class="banner warn" style="margin-top:.8rem">
+        <strong>Some tenants block device-code sign-in.</strong> If, after a successful
+        sign-in, you land on a Microsoft page saying
+        <em>“You don't have access to this… an authentication flow that is restricted by
+        your admin,”</em> the client's <strong>Conditional Access</strong> policy blocks the
+        device-code flow. That's a tenant security setting, not a tool problem. Use the
+        <strong>web app</strong> (this page's normal browser sign-in isn't device code, so
+        it isn't blocked), or install the CLI locally (below) to sign in with a browser.
+      </div>
+
+      <h3>Running it on your own machine (optional, and the fix for blocked device code)</h3>
+      <p>To have <code>m365-review</code> as a real command on your computer, install the
+         package into Python 3.11+:</p>
+      <pre><code>pip install -e .
+m365-review run --profile "Contoso"</code></pre>
+      <p class="hint">Installed locally it uses your real browser to sign in, so no device
+         code is needed.</p>
+    </section>
+
+    <section class="card" id="privacy">
+      <h2>Privacy, security &amp; the read-only guarantee</h2>
+      <ul>
+        <li>Only these read-only Graph scopes are requested, and only <code>GET</code>
+            calls are ever made:
+            {% for s in scopes %}<code>{{ s }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.</li>
+        <li>Your access token is held in memory for the run only — never logged,
+            saved, or put in a report — and is discarded when the audit finishes.</li>
+        <li>Reports can contain user names, UPNs, and sign-in dates. Treat them as
+            sensitive and store them somewhere access-controlled.</li>
+        <li>If usage-report names look scrambled, the tenant has “concealed names”
+            on; ask the client admin to turn it off for per-user detail.</li>
+      </ul>
+    </section>
+
+    <section class="card" id="trouble">
+      <h2>Troubleshooting</h2>
+      <dl class="kv">
+        <dt>“No reply address” (AADSTS500113) on sign-in</dt>
+        <dd>Add <code>{{ redirect_uri }}</code> to the app registration under
+            <strong>Mobile and desktop applications</strong> (not Web), and set
+            “Allow public client flows” to Yes.</dd>
+        <dt>“client_secret required” (AADSTS7000218)</dt>
+        <dd>The redirect URI was registered under the <strong>Web</strong> platform.
+            Delete it there and re-add it under <strong>Mobile and desktop
+            applications</strong> — this app is a public client with no secret.</dd>
+        <dt>“No tenant-identifying information” (AADSTS50059) on the CLI</dt>
+        <dd>Device-code sign-in needs the tenant named up front. Re-run with
+            <code>--tenant &lt;domain-or-id&gt;</code>, or save it on the profile.</dd>
+        <dt>“You don't have access to this” after a successful CLI sign-in</dt>
+        <dd>The client tenant's <strong>Conditional Access</strong> policy blocks the
+            device-code flow. Use the <strong>web app</strong> (its browser sign-in isn't
+            device code), or install the CLI locally to sign in with a browser. This is a
+            tenant security setting, not a tool issue.</dd>
+        <dt>403 during the audit</dt>
+        <dd>A required scope wasn’t consented. Have the client admin sign in again
+            and approve the consent screen.</dd>
+        <dt>“Client ID not configured”</dt>
+        <dd>Set <code>AZURE_APP_CLIENT_ID</code> in <code>.env</code>, or paste it on
+            the home page before signing in.</dd>
+        <dt>Sign-in activity missing</dt>
+        <dd>The tenant lacks Azure&nbsp;AD&nbsp;P1. R2 degrades to a manual-review list.</dd>
+      </dl>
+    </section>
+
+    <footer><p><a href="/">&larr; Back to the tool</a></p></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+# ---------------------------------------------------------------------------
+# SKU overlap table — used by Rule R4 (duplicate / overlapping licenses).
+# ---------------------------------------------------------------------------
+# Each entry describes a pair of SKUs that provide overlapping capability such
+# that assigning BOTH to the same user usually wastes money. `redundant` names
+# the SKU whose cost we treat as recoverable (usually the lesser / subsumed one).
+#
+# This list is EXPECTED TO GROW. Start with the obvious pairs. Part numbers are
+# `skuPartNumber` values. R4 is deferred past v1 but the config ships now so the
+# rule has data the moment it's implemented.
+# ---------------------------------------------------------------------------
+
+overlaps:
+  - sku_a: SPE_E5
+    sku_b: SPE_E3
+    redundant: SPE_E3
+    reason: "M365 E5 is a superset of E3; holding both duplicates all E3 features."
+
+  - sku_a: SPE_E3
+    sku_b: SPB
+    redundant: SPB
+    reason: "M365 E3 supersedes Business Premium feature-wise for a single user."
+
+  - sku_a: SPE_E3
+    sku_b: EXCHANGESTANDARD
+    redundant: EXCHANGESTANDARD
+    reason: "M365 E3 already includes Exchange Online Plan 2; standalone Plan 1 is redundant."
+
+  - sku_a: SPE_E3
+    sku_b: EXCHANGEENTERPRISE
+    redundant: EXCHANGEENTERPRISE
+    reason: "M365 E3 already includes Exchange Online Plan 2; standalone Plan 2 is redundant."
+
+  - sku_a: ENTERPRISEPACK
+    sku_b: EXCHANGESTANDARD
+    redundant: EXCHANGESTANDARD
+    reason: "Office 365 E3 includes Exchange Online Plan 2; standalone Plan 1 is redundant."
+
+  - sku_a: SPE_E5
+    sku_b: EMSPREMIUM
+    redundant: EMSPREMIUM
+    reason: "M365 E5 already includes EMS E5 components."
+
+  - sku_a: SPE_E5
+    sku_b: POWER_BI_PRO
+    redundant: POWER_BI_PRO
+    reason: "M365 E5 includes Power BI Pro."

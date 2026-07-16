@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>M365 License Review</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>M365 License Review</h1>
+      <p class="sub">Read-only Microsoft&nbsp;365 license optimization &middot; v{{ version }}</p>
+      <p class="topnav"><a href="/help">Help &amp; guidance &rarr;</a></p>
+    </header>
+
+    {% if not client_id_configured %}
+    <div class="banner warn">
+      <strong>Azure app client ID not configured.</strong>
+      Set <code>AZURE_APP_CLIENT_ID</code> in your <code>.env</code> (see the README),
+      or paste it below before signing in.
+    </div>
+    {% endif %}
+
+    <section class="card">
+      <h2>1 &middot; Audit options</h2>
+      <form id="audit-form" action="/auth/login" method="get">
+        <fieldset>
+          <legend>Tenant / client profile</legend>
+
+          {% if profiles %}
+          <label>Use a saved profile
+            <select name="profile" id="profile-select">
+              <option value="">— choose a saved client —</option>
+              {% for p in profiles %}
+              <option value="{{ p.name }}">{{ p.name }}{% if p.last_tenant_name %} · last: {{ p.last_tenant_name }}{% endif %}</option>
+              {% endfor %}
+              <option value="__new__">➕ Add a new profile…</option>
+            </select>
+          </label>
+          {% endif %}
+
+          <div id="new-profile" {% if profiles %}style="display:none"{% endif %}>
+            <label>Profile name <span class="opt">(saved for next time)</span>
+              <input type="text" name="new_profile_name" placeholder="e.g. Contoso Ltd" />
+            </label>
+            <label>Azure app client ID
+              <input type="text" name="client_id"
+                     value="{{ '' if not client_id_configured else default_client_id }}"
+                     placeholder="00000000-0000-0000-0000-000000000000" />
+            </label>
+            {% if client_id_configured %}
+            <p class="hint">Pre-filled from <code>AZURE_APP_CLIENT_ID</code>. Give it a
+               name to save it as a reusable profile.</p>
+            {% endif %}
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Output formats</legend>
+          <label class="chk"><input type="checkbox" name="formats" value="xlsx" checked /> Excel (.xlsx)</label>
+          <label class="chk"><input type="checkbox" name="formats" value="docx" checked /> Word (.docx)</label>
+          <label class="chk"><input type="checkbox" name="formats" value="json" checked /> JSON (.json)</label>
+        </fieldset>
+
+        <label class="chk">
+          <input type="checkbox" name="experimental" value="1" />
+          Enable experimental rules (R5&ndash;R7)
+        </label>
+
+        <button type="submit" class="primary">Sign in to a client tenant &rarr;</button>
+        <p class="hint">
+          You'll be redirected to Microsoft, sign in as a <em>client tenant admin</em>,
+          and approve read-only consent. The tool never writes to the tenant.
+        </p>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>2 &middot; Prefer the command line?</h2>
+      <p class="hint">
+        The web app and the CLI share the same engine. This is the equivalent
+        command for the options selected above &mdash; copy it to script or automate runs.
+      </p>
+      <div class="cli-row">
+        <pre id="cli-cmd"><code>m365-review run --format xlsx --format docx --format json</code></pre>
+        <button type="button" id="copy-cli" class="ghost">Copy</button>
+      </div>
+      <p class="hint">
+        Run headless in the container:
+        <code>docker compose run --rm m365-review m365-review run ...</code>
+      </p>
+    </section>
+
+    <section class="card muted">
+      <h2>Read-only guarantee</h2>
+      <p>This tool requests only these delegated Graph scopes and makes only
+         <code>GET</code> calls:</p>
+      <ul class="scopes">
+        {% for s in scopes %}<li><code>{{ s }}</code></li>{% endfor %}
+      </ul>
+    </section>
+
+    <footer>
+      <p>Reports may contain client PII. Store them in an access-controlled location.</p>
+    </footer>
+  </main>
+
+  <script>
+    const form = document.getElementById('audit-form');
+    const cli = document.querySelector('#cli-cmd code');
+    const select = document.getElementById('profile-select');
+    const newBlock = document.getElementById('new-profile');
+
+    // Toggle the "add new profile" fields based on the dropdown.
+    function syncProfileUI() {
+      if (!select) return;
+      newBlock.style.display = (select.value === '__new__') ? 'block' : 'none';
+    }
+    if (select) select.addEventListener('change', () => { syncProfileUI(); rebuildCli(); });
+
+    // Keep the "equivalent CLI command" panel in sync with the form selections.
+    function rebuildCli() {
+      const fmts = [...form.querySelectorAll('input[name="formats"]:checked')].map(i => i.value);
+      const exp = form.querySelector('input[name="experimental"]').checked;
+      let cmd = 'm365-review run';
+      if (select && select.value && select.value !== '__new__') {
+        cmd += ` --profile "${select.value}"`;
+      }
+      for (const f of fmts) cmd += ` --format ${f}`;
+      if (exp) cmd += ' --enable-experimental-rules';
+      cli.textContent = cmd;
+    }
+    form.addEventListener('change', rebuildCli);
+    syncProfileUI();
+    rebuildCli();
+
+    document.getElementById('copy-cli').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(cli.textContent);
+      const b = document.getElementById('copy-cli');
+      b.textContent = 'Copied!';
+      setTimeout(() => (b.textContent = 'Copy'), 1500);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+services:
+  m365-review:
+    # End users pull a prebuilt image; developers build locally with `--build`.
+    # Override the image with:  M365_IMAGE=ghcr.io/<owner>/m365-license-review:latest
+    image: ${M365_IMAGE:-m365-license-review:local}
+    build: .
+    ports:
+      - "8000:8000"
+    # .env is OPTIONAL — the app auto-generates a session secret, and the client
+    # ID can be entered in the web UI. `required: false` lets the stack start
+    # without a .env file present.
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      # Persist generated reports on the host
+      - ./reports:/app/reports
+      # Persist the SQLite profiles DB + auto-generated session secret
+      - ./data:/app/data
+      # Let the operator edit SKU price maps without rebuilding the image
+      - ./config:/app/config:ro
+    restart: "no"

@@ -1,0 +1,13 @@
+{
+  "value": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "displayName": "Contoso Ltd",
+      "countryLetterCode": "US",
+      "verifiedDomains": [
+        { "name": "contoso.com", "isDefault": true },
+        { "name": "contoso.onmicrosoft.com", "isDefault": false }
+      ]
+    }
+  ]
+}
