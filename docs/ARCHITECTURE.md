@@ -45,12 +45,13 @@ directly, which is what makes the tool reproducible.
 | **HTTP** | `core/graph_client.py` | Async httpx wrapper: pagination, 429/5xx retry, **GET-only runtime guard**. |
 | **Fetch** | `core/fetchers/*` | One module per Graph area: `organization`, `skus`, `users`, `reports`. |
 | **Model** | `core/models.py` | Pydantic models for Graph payloads + the canonical `AuditResult`. |
-| **Pricing** | `core/pricing.py` | Loads the SKU yaml maps; price + display-name + overlap lookups. |
+| **Pricing** | `core/pricing.py` | Loads the SKU yaml maps; price + display-name (Microsoft's official names, ~600 SKUs, with a prettified fallback) + overlap lookups. |
+| **Profiles** | `core/profiles.py` | SQLite store of saved `name → client ID` connection profiles (+ last-audited tenant). |
 | **Rules** | `core/rules/*` | Pure functions `(TenantData) -> list[Finding]`. Registry in `rules/__init__.py`. |
-| **Report** | `core/report/*` | One `AuditResult` → three writers: `xlsx_writer`, `docx_writer`, `json_writer`. |
+| **Report** | `core/report/*` | One `AuditResult` → three writers (`xlsx`, `docx`, `json`), each led by a License Optimization Summary and splitting **paid vs. free** licenses. |
 | **Orchestration** | `core/engine.py` | Ties it together: `TenantSession` → fetch → rules → `AuditResult` → files. |
-| **Web** | `web/app.py`, `web/sessions.py` | Routes + in-memory session/token store. |
-| **CLI** | `cli.py` | `run`, `sku-check` commands. |
+| **Web** | `web/app.py`, `web/sessions.py` | Routes + in-memory session/token store; profile picker. |
+| **CLI** | `cli.py` | `run` (`--profile`/`--client-id`/`--tenant`, interactive picker, device-code), `sku-check`, `profiles` (list/add/remove/show). |
 
 ---
 
@@ -83,9 +84,12 @@ visually verifies the correct tenant before any audit runs.
 - Authority is `https://login.microsoftonline.com/organizations` — never a
   hard-coded tenant ID. The audited tenant is identified *after* sign-in from
   the id-token `tid` claim.
-- **Public client, no secret.** Auth-code flow uses PKCE; the redirect URI
-  (`AZURE_REDIRECT_URI`, default `http://localhost:8000/auth/callback`) must be
-  registered on the app.
+- **Public client, no secret.** Auth-code flow uses PKCE. The redirect URI is
+  derived from the port the browser actually uses (so the tool works on any host
+  port); each port's `…/auth/callback` must be registered on the app. An explicit
+  `AZURE_REDIRECT_URI` env var overrides this (for proxy/HTTPS deployments).
+- The **session secret** is auto-generated and persisted to `data/.session_secret`
+  if not supplied, so no manual configuration is needed.
 - Each first-time client sign-in shows a consent screen listing the read-only
   scopes — this *is* the client's audit trail and is intentionally not bypassed.
 
@@ -113,17 +117,29 @@ Each rule is a pure function returning `Finding`s. A `Finding` carries
 
 Experimental rules are gated behind `--enable-experimental-rules` / a UI toggle.
 
+**License classification (applied in `engine.build_result`):**
+- **Free / self-service SKUs** (a ≥10,000 default quota, e.g. Power Automate Free,
+  RMS ad-hoc) are excluded from purchased/assigned totals and from R3 — their
+  phantom "slack" isn't reclaimable. They're shown in a separate inventory category.
+- **Inactive subscriptions** (`capabilityStatus` suspended/deleted/locked-out) are
+  excluded from totals, inventory, and rules, and named in a caveat.
+- **"Purchased" = usable seats** = `enabled + warning` (grace-period seats count).
+- Rules still resolve license *names* against the full SKU set, so a disabled user's
+  license from an inactive subscription is still shown by name, not a raw GUID.
+
 ---
 
 ## 6. Output
 
-One canonical `AuditResult` object is serialized by three independent writers:
+One canonical `AuditResult` object is serialized by three independent writers,
+each **led by a License Optimization Summary** and using friendly product names:
 
-- **`.xlsx`** (openpyxl) — Summary, Findings, per-rule detail sheets, license
-  inventory, hidden raw-data sheet. Conditional formatting on severity.
-- **`.docx`** (python-docx) — client-facing narrative: how-to-read intro,
-  summary, findings table, per-rule detail sections.
-- **`.json`** — the full structured result for machine consumption / v2 trending.
+- **`.xlsx`** (openpyxl) — Summary, License Optimization, License Inventory
+  (**paid vs. free** sections), per-rule detail sheets, hidden raw-data sheet.
+- **`.docx`** (python-docx) — client-facing narrative: how-to-read, optimization
+  summary + prioritized table, per-finding detail, paid/free inventory tables.
+- **`.json`** — full structured result (with an `optimization_summary` block and
+  `paid`/`free` inventory) for automation / trending.
 
 Files are named `{tenant_display_name}_{YYYY-MM-DD}.{ext}` and written to
 `OUTPUT_DIR` (a mounted volume in Docker).
@@ -172,23 +188,32 @@ Anyone cloning the repo can `jupyter lab` and re-run top-to-bottom.
 
 ---
 
-## 10. Deployment
+## 10. Deployment & packaging
+
+No manual configuration is required — the session secret auto-generates and the
+client ID is entered in the UI. Ways to run:
 
 ```bash
-cp .env.example .env          # set AZURE_APP_CLIENT_ID + SESSION_SECRET
-docker compose up --build     # → http://localhost:8000
-# CLI (headless):
-docker compose run --rm m365-review m365-review run --format xlsx --format json
+# Simplest (published image, no files):
+docker run -d -p 8000:8000 -v m365_data:/app/data ghcr.io/<owner>/m365-license-review:latest
+# From the repo:
+./run.ps1            # or ./run.sh — auto-picks a free host port, opens the browser
+docker compose up -d # HOST_PORT overridable
+# Offline: docker save / docker load, then docker run
 ```
 
-Intended to run **locally** on an operator's machine (localhost, one tenant per
-session). A hosted multi-user deployment would require additional operator
-auth, session isolation review, and TLS — explicitly out of scope for v1.
+- **Distribution:** a GitHub Action (`.github/workflows/docker-publish.yml`) builds a
+  multi-arch image and pushes it to **GHCR** on each `v*` tag. See the README's
+  "Releasing" section. `docs/GETTING_STARTED.md` is the end-user guide.
+- Intended to run **locally** on an operator's machine (localhost, one tenant per
+  session). A hosted multi-user deployment would need operator auth, session
+  isolation review, and TLS — out of scope for v1.
 
 ---
 
 ## 11. Out of scope for v1
 
-Multi-tenant batch runs, web dashboard/history, database/trending, automated
+Multi-tenant batch runs, web dashboard/history, historical trending, automated
 license changes, PSA/RMM/billing integration, GDAP auth, non-USD currency,
-localization. See `PROGRESS.md` for live build state.
+localization. (SQLite is used for saved connection profiles only — not for
+audit-result history.) See `PROGRESS.md` for live build state.

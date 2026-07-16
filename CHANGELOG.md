@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-07-16
+
+### Added
+- **Flexible port** — the app now builds its sign-in redirect URI from the port the
+  browser actually uses, so it works on any host port. The `run.ps1` / `run.sh`
+  launchers auto-pick a free port (8000 → 8080 → 8010 → …), and Compose honors a
+  `HOST_PORT` override. Register the fallback ports' `…/auth/callback` URIs in the
+  Azure app so sign-in works on whichever port is chosen.
+- **Step-by-step Getting Started guide** (`docs/GETTING_STARTED.md`) — self-contained:
+  a single `docker run` gets the tool running with no files to download.
+
 ## [0.1.0] - 2026-07-16
 
 Initial release.
@@ -36,4 +47,5 @@ Initial release.
   and a tenant-specific authority; tenants that block device code via Conditional
   Access should use the web app.
 
+[0.1.1]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.1
 [0.1.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.0
