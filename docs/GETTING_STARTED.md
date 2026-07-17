@@ -66,18 +66,25 @@ Pick **one** of the options below. If you don't like the command line, use the
 
 ### Easiest — double-click (no commands)
 
-Copy the launcher bundle to the machine, then double-click one of two files:
+Copy the launcher bundle to the machine, then double-click the file that fits.
+Each one **checks what's already installed before installing anything**, and once
+the engine is up it **starts the tool and opens your browser**.
 
-- **`Setup-M365-Review.cmd`** — for a machine that **doesn't have Docker yet**. It
-  installs WSL2 + Docker Desktop (latest, via `winget` — needs internet + admin,
-  and usually **one reboot**; just double-click it again after rebooting to
-  finish), then **starts Docker, runs the tool, and opens your browser**.
-- **`Start-M365-Review.cmd`** — for a machine that **already has Docker Desktop**.
-  It loads the image (from the bundled `.tar` if present, otherwise downloads it),
-  starts the tool, and opens your browser.
+- **`Setup-M365-Review-RancherDesktop.cmd`** — *recommended, license-free.* For a
+  machine with **no container engine**. Installs WSL2 + **Rancher Desktop** (free,
+  open-source — **no Docker Desktop license**) via `winget`, configures the Docker
+  (moby) engine, then runs the tool. Needs internet + admin; usually **one reboot**
+  (double-click again after rebooting to finish).
+- **`Setup-M365-Review-DockerDesktop.cmd`** — same, but installs **Docker Desktop**
+  instead. Only use this if you already standardize on Docker Desktop and hold a
+  license where required (250+ employees / >$10M revenue).
+- **`Start-M365-Review.cmd`** — for a machine that **already has an engine**
+  (Rancher *or* Docker Desktop). Loads the image (from the bundled `.tar` if present,
+  else downloads it), runs the tool, and opens your browser.
 
-The offline bundle can also include `m365-license-review.tar` so no image download
-is needed (the Docker Desktop install in Setup still needs internet, though).
+No VS Code needed — Rancher/Docker provide the engine, `docker` CLI, and a GUI. The
+offline bundle can also include `m365-license-review.tar` so no image download is
+needed (the engine install in Setup still needs internet).
 
 **Prefer clicking inside Docker Desktop?** Go to the **Images** tab → on the
 `ghcr.io/<owner>/m365-license-review` row, click the **▶ (Run)** icon in the

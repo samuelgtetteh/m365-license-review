@@ -13,17 +13,27 @@ REM ============================================================================
 set "IMAGE=ghcr.io/samuelgtetteh/m365-license-review:latest"
 set "TAR=%~dp0m365-license-review.tar"
 
-REM --- locate the docker command (fall back to the default install path) ---
-set "DOCKER=docker"
-where docker >nul 2>&1 || set "DOCKER=%ProgramFiles%\Docker\Docker\resources\bin\docker.exe"
+REM --- locate a docker CLI (Docker Desktop OR Rancher Desktop OR anything on PATH) ---
+set "DOCKER="
+where docker >nul 2>&1 && set "DOCKER=docker"
+if not defined DOCKER if exist "%USERPROFILE%\.rd\bin\docker.exe" set "DOCKER=%USERPROFILE%\.rd\bin\docker.exe"
+if not defined DOCKER if exist "%ProgramFiles%\Docker\Docker\resources\bin\docker.exe" set "DOCKER=%ProgramFiles%\Docker\Docker\resources\bin\docker.exe"
+if not defined DOCKER (
+  echo.
+  echo No container engine found. Install one first ^(either is fine^):
+  echo   * Rancher Desktop  ^(free, no license^) - run Setup-M365-Review-RancherDesktop.cmd
+  echo   * Docker Desktop                        - run Setup-M365-Review-DockerDesktop.cmd
+  echo.
+  pause
+  exit /b 1
+)
 
-REM --- is Docker Desktop running? ---
+REM --- is the engine running? ---
 "%DOCKER%" info >nul 2>&1
 if errorlevel 1 (
   echo.
-  echo Docker Desktop was not found or is not running.
-  echo Please install and START Docker Desktop, then double-click this file again.
-  echo   https://www.docker.com/products/docker-desktop/
+  echo A container engine is installed but not running.
+  echo Start Docker Desktop or Rancher Desktop, then double-click this file again.
   echo.
   pause
   exit /b 1
