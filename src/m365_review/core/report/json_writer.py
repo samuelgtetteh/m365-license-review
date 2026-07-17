@@ -57,6 +57,27 @@ def build_json_payload(result: AuditResult) -> dict:
             "paid": [_inv_row(r) for r in result.inventory if not r.is_unlimited],
             "free": [_inv_row(r) for r in result.inventory if r.is_unlimited],
         },
+        # Subscription expirations — a dedicated, separate section.
+        "subscription_expirations": {
+            "available": result.subscriptions_available,
+            "summary": result.expiration_summary(),
+            "items": [
+                {
+                    "display_name": s.display_name or s.sku_part_number,
+                    "sku_part_number": s.sku_part_number,
+                    "status": s.status,
+                    "total_licenses": s.total_licenses,
+                    "is_trial": s.is_trial,
+                    "created": s.created_datetime.isoformat() if s.created_datetime else None,
+                    "next_lifecycle": (
+                        s.next_lifecycle_datetime.isoformat() if s.next_lifecycle_datetime else None
+                    ),
+                    "days_remaining": s.days_until_expiry(result.generated_at),
+                    "expired": s.is_expired(result.generated_at),
+                }
+                for s in result.subscriptions
+            ],
+        },
         "caveats": result.caveats,
     }
 

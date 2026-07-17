@@ -112,3 +112,48 @@ a { color: var(--accent); }
   vertical-align: top; }
 .help-table th { background: #0d141b; color: var(--ink); }
 .help-table td:first-child { font-family: ui-monospace, monospace; white-space: nowrap; color: var(--accent); }
+
+/* ---- Tabs ---- */
+.tabs { display: flex; flex-wrap: wrap; gap: .3rem; border-bottom: 1px solid var(--border); margin: 1rem 0 1.1rem; }
+.tab { background: transparent; border: 1px solid transparent; border-bottom: none; color: var(--ink-dim);
+  padding: .55rem .9rem; border-radius: 8px 8px 0 0; cursor: pointer; font: inherit; font-size: .92rem; }
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--ink); background: var(--card); border-color: var(--border);
+  margin-bottom: -1px; font-weight: 600; }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ---- Feature grid ---- */
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .8rem; margin: .3rem 0 .6rem; }
+.feature { background: #0d141b; border: 1px solid var(--border); border-radius: 10px; padding: .9rem; }
+.feature h3 { margin: .5rem 0 .3rem; font-size: .95rem; color: var(--ink); }
+.feature p { margin: 0; color: var(--ink-dim); font-size: .85rem; }
+.tag { display: inline-block; font-size: .72rem; font-weight: 700; padding: .12rem .5rem; border-radius: 999px;
+  background: #2a3543; color: var(--ink); font-family: ui-monospace, monospace; }
+.tag.high { background: #7a2f1a; color: #ffd9cc; }
+.tag.med { background: #6b5410; color: #ffe9a8; }
+.tag.info { background: #1f4a2e; color: #bff0cf; }
+.ticks { list-style: none; padding-left: 0; margin: .4rem 0; }
+.ticks li { padding-left: 1.4rem; position: relative; margin: .4rem 0; color: var(--ink); }
+.ticks li::before { content: "✓"; position: absolute; left: 0; color: #6cc04a; font-weight: 700; }
+
+/* ---- Theme toggle ---- */
+#theme-toggle { position: absolute; top: 1.4rem; right: 1.25rem; background: var(--card);
+  border: 1px solid var(--border); color: var(--ink-dim); border-radius: 8px; padding: .35rem .7rem;
+  cursor: pointer; font: inherit; font-size: .82rem; }
+#theme-toggle:hover { color: var(--ink); border-color: var(--accent); }
+
+/* ---- Light theme ---- */
+:root[data-theme="light"] {
+  --bg: #f4f6f8; --card: #ffffff; --card-muted: #eef1f5; --ink: #1a2330;
+  --ink-dim: #5a6b7b; --accent: #2f6fe0; --warn-bg: #fff4d6; --warn-ink: #7a5b00; --border: #d9e0e7;
+}
+:root[data-theme="light"] input[type="text"],
+:root[data-theme="light"] select,
+:root[data-theme="light"] pre,
+:root[data-theme="light"] .stat,
+:root[data-theme="light"] .progress-track,
+:root[data-theme="light"] .dl-btn,
+:root[data-theme="light"] .feature,
+:root[data-theme="light"] .help-table th { background: #eef1f5; color: var(--ink); }
+:root[data-theme="light"] .tag { background: #dde3ea; }

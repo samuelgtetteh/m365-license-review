@@ -13,7 +13,13 @@ from pathlib import Path
 
 import pytest
 
-from m365_review.core.models import Organization, SubscribedSku, TenantData, User
+from m365_review.core.models import (
+    Organization,
+    SubscribedSku,
+    Subscription,
+    TenantData,
+    User,
+)
 from m365_review.core.pricing import load_pricing
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
@@ -40,11 +46,13 @@ def pricing():
 def tenant_data() -> TenantData:
     org = Organization.from_graph(_load("organization.json")["value"][0])
     skus = [SubscribedSku.from_graph(s) for s in _load("subscribedSkus.json")["value"]]
+    subs = [Subscription.from_graph(s) for s in _load("subscriptions.json")["value"]]
     users = [User.from_graph(u) for u in _load("users.json")["value"]]
     return TenantData(
         organization=org,
         tenant_id=org.id,
         skus=skus,
+        subscriptions=subs,
         users=users,
         sign_in_activity_available=True,
     )

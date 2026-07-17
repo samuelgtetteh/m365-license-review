@@ -87,6 +87,15 @@ class Settings(BaseSettings):
     config_dir: Path = Field(default=DEFAULT_CONFIG_DIR, alias="CONFIG_DIR")
     data_dir: Path = Field(default=DEFAULT_DATA_DIR, alias="DATA_DIR")
 
+    # --- Pricing ---
+    # Optional URL to an online rate card (JSON dict {skuPartNumber: price},
+    # a JSON list of {sku, price}, or CSV with sku/price columns). When set, it
+    # overrides/extends config/sku_prices.yaml; a cached copy is used if offline.
+    price_source_url: str = Field(default="", alias="PRICE_SOURCE_URL")
+
+    # --- Reporting / branding ---
+    report_company_name: str = Field(default="", alias="REPORT_COMPANY_NAME")
+
     # --- Web server bind ---
     host: str = Field(default="0.0.0.0", alias="HOST")
     port: int = Field(default=8000, alias="PORT")
@@ -117,6 +126,11 @@ class Settings(BaseSettings):
     def db_path(self) -> Path:
         """SQLite database file holding saved connection profiles."""
         return self.data_dir / "m365_review.db"
+
+    @property
+    def price_cache_path(self) -> Path:
+        """Cached copy of the online rate card (used when offline)."""
+        return self.data_dir / "prices_cache.json"
 
 
 def _resolve_session_secret(settings: "Settings") -> str:

@@ -17,11 +17,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from openpyxl import Workbook
+from openpyxl.chart import PieChart, Reference
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from m365_review.core.models import AuditResult, Severity
+from m365_review.settings import get_settings
 
 # --- palette ---
 _NAVY = "1F3864"
@@ -43,6 +45,7 @@ def write_xlsx(result: AuditResult, path: Path) -> Path:
     _summary_sheet(wb.active, result)
     _optimization_sheet(wb.create_sheet("License Optimization"), result)
     _inventory_sheet(wb.create_sheet("License Inventory"), result)
+    _expirations_sheet(wb.create_sheet("Subscription Expirations"), result)
     _disabled_detail_sheet(wb.create_sheet("Detail - Disabled Users"), result)
     _inactive_detail_sheet(wb.create_sheet("Detail - Inactive Users"), result)
     _raw_sheet(wb.create_sheet("Raw Data"), result)
@@ -87,6 +90,11 @@ def _summary_sheet(ws: Worksheet, result: AuditResult) -> None:
     for r in range(3, 6):
         ws.cell(row=r, column=1).font = Font(bold=True)
 
+    company = get_settings().report_company_name
+    if company:
+        ws["A2"] = f"Prepared by {company}"
+        ws["A2"].font = _SUBTLE
+
     ws["A7"] = "How to read this report"
     ws["A7"].font = Font(bold=True, size=12, color=_NAVY)
     intro = (
@@ -121,10 +129,24 @@ def _summary_sheet(ws: Worksheet, result: AuditResult) -> None:
     r += 1
     ws.cell(row=r, column=1, value="Findings by severity").font = Font(bold=True, size=12, color=_NAVY)
     r += 1
+    sev_first = r
     for sev, count in result.severity_counts().items():
         ws.cell(row=r, column=1, value=sev.capitalize())
         ws.cell(row=r, column=2, value=count)
         r += 1
+    sev_last = r - 1
+
+    # Native pie chart of findings-by-severity (anchored to the right, cols A-F free).
+    if result.findings:
+        chart = PieChart()
+        chart.title = "Findings by severity"
+        chart.height = 6.5
+        chart.width = 10
+        labels = Reference(ws, min_col=1, min_row=sev_first, max_row=sev_last)
+        data = Reference(ws, min_col=2, min_row=sev_first, max_row=sev_last)
+        chart.add_data(data, titles_from_data=False)
+        chart.set_categories(labels)
+        ws.add_chart(chart, "H2")
 
     if result.caveats:
         r += 1
@@ -250,6 +272,54 @@ def _inventory_section(ws: Worksheet, row: int, ncols: int, title: str, rows, *,
         sub.number_format = _MONEY
         row += 1
     return row
+
+
+# --------------------------------------------------------------------------- #
+# Subscription expirations (its own section)
+# --------------------------------------------------------------------------- #
+
+def _expirations_sheet(ws: Worksheet, result: AuditResult) -> None:
+    headers = [
+        "Product", "SKU part number", "Status", "Licenses", "Trial",
+        "Created", "Renews / expires", "Days remaining",
+    ]
+    _header_row(ws, 1, headers)
+
+    if not result.subscriptions_available:
+        ws.cell(row=2, column=1, value="Subscription/expiration data was unavailable for this tenant.").font = _SUBTLE
+        _autosize(ws, [34, 26, 12, 10, 8, 14, 18, 14])
+        return
+    if not result.subscriptions:
+        ws.cell(row=2, column=1, value="(no subscriptions returned)").font = _SUBTLE
+        _autosize(ws, [34, 26, 12, 10, 8, 14, 18, 14])
+        return
+
+    now = result.generated_at
+    row = 2
+    for s in result.subscriptions:
+        days = s.days_until_expiry(now)
+        ws.cell(row=row, column=1, value=s.display_name or s.sku_part_number)
+        ws.cell(row=row, column=2, value=s.sku_part_number)
+        ws.cell(row=row, column=3, value=s.status or "")
+        ws.cell(row=row, column=4, value=s.total_licenses)
+        ws.cell(row=row, column=5, value="Yes" if s.is_trial else "")
+        ws.cell(row=row, column=6, value=s.created_datetime.date().isoformat() if s.created_datetime else "")
+        ws.cell(
+            row=row, column=7,
+            value=s.next_lifecycle_datetime.date().isoformat() if s.next_lifecycle_datetime else "",
+        )
+        ws.cell(row=row, column=8, value=days if days is not None else "")
+        # colour: red if expired, amber if within 30 days
+        fill = None
+        if days is not None and days < 0:
+            fill = _HIGH_FILL
+        elif days is not None and days <= 30:
+            fill = _MED_FILL
+        if fill:
+            for col in range(1, len(headers) + 1):
+                ws.cell(row=row, column=col).fill = fill
+        row += 1
+    _autosize(ws, [34, 26, 12, 10, 8, 14, 18, 14])
 
 
 # --------------------------------------------------------------------------- #

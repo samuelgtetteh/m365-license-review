@@ -44,7 +44,8 @@ degrades to "expiration data unavailable" (a report note) if it 404s.
    summary (severity by proximity; also flag expired-but-still-consuming).
 7. Fixtures (`tests/fixtures/subscriptions.json`) + tests + a notebook cell.
 
-**Status:** planned (next build)
+**Status:** ✅ done in v0.2.0 (model + beta fetcher + engine + separate export in all
+three formats + rule **R8** "expiring soon" + fixtures/tests).
 
 ---
 
@@ -52,8 +53,8 @@ degrades to "expiration data unavailable" (a report note) if it 404s.
 
 | ID | Check | Category | Value | Effort | New scope? | Status |
 |----|-------|----------|-------|--------|-----------|--------|
-| EXP | Subscription expiration / renewal dates (separate export) | Licensing | High | M | No | planned (next) |
-| R4  | Duplicate / overlapping SKUs on one user | Licensing | High | S | No | planned |
+| EXP | Subscription expiration / renewal dates (separate export) | Licensing | High | M | No | ✅ done (v0.2.0) |
+| R4  | Duplicate / overlapping SKUs on one user | Licensing | High | S | No | ✅ done (v0.2.0) |
 | LIC-GRP | Group-based license assignment **errors** (`licenseAssignmentStates`) | Licensing | High | S | No | planned |
 | GUEST/R7 | Licensed & stale guest users | Identity/Cost | High | S | No | planned |
 | STALE | Inactive / never-signed-in accounts (all, not just licensed) | Identity | High | S | No (P1-gated) | planned |

@@ -20,6 +20,7 @@ from typing import Awaitable, Callable
 from m365_review.core.auth import TenantSession
 from m365_review.core.fetchers.organization import fetch_organization
 from m365_review.core.fetchers.skus import fetch_subscribed_skus
+from m365_review.core.fetchers.subscriptions import fetch_subscriptions
 from m365_review.core.fetchers.users import fetch_users
 from m365_review.core.graph_client import GraphClient
 from m365_review.core.models import AuditResult, SkuInventoryRow, TenantData
@@ -59,6 +60,9 @@ async def fetch_tenant_data(
         await _emit(progress, "Reading subscribed licenses", 0.3)
         skus = await fetch_subscribed_skus(gc)
 
+        await _emit(progress, "Reading subscription expiration dates", 0.45)
+        subscriptions, subs_available = await fetch_subscriptions(gc)
+
         await _emit(progress, "Reading users and license assignments", 0.6)
         users_result = await fetch_users(gc)
 
@@ -72,8 +76,10 @@ async def fetch_tenant_data(
         organization=org,
         tenant_id=session.tenant_id,
         skus=skus,
+        subscriptions=subscriptions,
         users=users_result.users,
         sign_in_activity_available=users_result.sign_in_activity_available,
+        subscriptions_available=subs_available,
     )
 
 
@@ -117,6 +123,14 @@ def build_result(
         s.sku_id: pricing.display_name(s.sku_part_number) for s in data.skus
     }
 
+    # Fill friendly names on subscriptions (sorted by soonest expiry first).
+    for sub in data.subscriptions:
+        sub.display_name = pricing.display_name(sub.sku_part_number)
+    subscriptions = sorted(
+        data.subscriptions,
+        key=lambda s: (s.next_lifecycle_datetime is None, s.next_lifecycle_datetime or now),
+    )
+
     return AuditResult(
         tenant_display_name=data.organization.display_name or data.tenant_id,
         tenant_id=data.tenant_id,
@@ -127,6 +141,8 @@ def build_result(
         total_purchased=sum(s.usable for s in paid_skus),
         total_assigned=sum(s.consumed_units for s in paid_skus),
         caveats=caveats,
+        subscriptions=subscriptions,
+        subscriptions_available=data.subscriptions_available,
         sku_id_to_name=sku_id_to_name,
         tenant_data=data,
     )
@@ -175,6 +191,11 @@ def _build_caveats(
             + ", ".join(pricing.display_name(s) for s in free)
             + "."
         )
+    if not data.subscriptions_available:
+        caveats.append(
+            "Subscription expiration data was unavailable (the /directory/subscriptions "
+            "endpoint did not return data for this tenant), so the expirations section is empty."
+        )
     if not data.sign_in_activity_available:
         caveats.append(
             "Sign-in activity was unavailable (tenant lacks Azure AD P1), so inactivity-based "
@@ -199,6 +220,7 @@ def _build_caveats(
     caveats.append(
         "Usage report data (where used) can lag 24-72 hours behind real activity."
     )
+    caveats.append(f"License prices sourced from: {pricing.source}.")
     return caveats
 
 

@@ -7,6 +7,9 @@ the SKU and surfaces a caveat telling the operator to update the price map.
 
 from __future__ import annotations
 
+import csv
+import io
+import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
@@ -55,10 +58,12 @@ class PricingCatalog:
         prices: dict[str, float],
         display_names: dict[str, str],
         overlaps: list[Overlap],
+        source: str = "local price map",
     ):
         self._prices = prices
         self._display_names = display_names
         self._overlaps = overlaps
+        self.source = source  # human-readable description of where prices came from
 
     # --- prices ---
     def price(self, sku_part_number: str) -> float | None:
@@ -103,16 +108,114 @@ class PricingCatalog:
 
 
 def load_pricing(settings: Settings | None = None) -> PricingCatalog:
-    """Load all three yaml maps into a PricingCatalog."""
+    """Load pricing: local yaml as the base, optionally overlaid with online rates."""
     settings = settings or get_settings()
     prices = _load_price_map(settings.sku_prices_path)
     names = _load_name_map(settings.sku_display_names_path)
     overlaps = _load_overlaps(settings.sku_overlaps_path)
+    source = "local price map (config/sku_prices.yaml)"
+
+    # Overlay online rates when a source URL is configured.
+    if settings.price_source_url:
+        online, online_source = _load_online_prices(
+            settings.price_source_url, settings.price_cache_path
+        )
+        if online:
+            prices.update(online)  # online overrides / extends the yaml
+            source = online_source
+        else:
+            logger.warning("Online price source yielded no prices; using the local yaml.")
+
     logger.info(
-        "Loaded pricing: %d prices, %d display names, %d overlap rules.",
-        len(prices), len(names), len(overlaps),
+        "Loaded pricing: %d prices, %d display names, %d overlap rules (source: %s).",
+        len(prices), len(names), len(overlaps), source,
     )
-    return PricingCatalog(prices=prices, display_names=names, overlaps=overlaps)
+    return PricingCatalog(prices=prices, display_names=names, overlaps=overlaps, source=source)
+
+
+# --------------------------------------------------------------------------- #
+# Online price source (URL -> JSON/CSV), cached, with graceful fallback
+# --------------------------------------------------------------------------- #
+
+def parse_price_payload(text: str) -> dict[str, float]:
+    """Parse a rate card from JSON (dict or list) or CSV text into {sku: price}.
+
+    Accepts:
+      * JSON object:  {"SPE_E3": 36.0, ...}
+      * JSON array:   [{"sku": "SPE_E3", "price": 36.0}, ...]
+      * CSV:          headers include sku/sku_part_number/skuPartNumber + price/unit_price_usd
+    """
+    text = (text or "").strip()
+    if not text:
+        return {}
+
+    # Try JSON first.
+    try:
+        obj = json.loads(text)
+        if isinstance(obj, dict):
+            return {str(k): float(v) for k, v in obj.items() if _is_number(v)}
+        if isinstance(obj, list):
+            out: dict[str, float] = {}
+            for row in obj:
+                if not isinstance(row, dict):
+                    continue
+                sku = row.get("sku") or row.get("sku_part_number") or row.get("skuPartNumber")
+                price = row.get("price", row.get("unit_price_usd"))
+                if sku and _is_number(price):
+                    out[str(sku).strip()] = float(price)
+            return out
+    except (json.JSONDecodeError, ValueError):
+        pass
+
+    # Fall back to CSV.
+    out = {}
+    reader = csv.DictReader(io.StringIO(text))
+    for row in reader:
+        sku = row.get("sku") or row.get("sku_part_number") or row.get("skuPartNumber")
+        price = row.get("price", row.get("unit_price_usd"))
+        if sku and price not in (None, ""):
+            try:
+                out[str(sku).strip()] = float(price)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def _is_number(value) -> bool:
+    try:
+        float(value)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _load_online_prices(url: str, cache_path: Path) -> tuple[dict[str, float], str]:
+    """Fetch prices from the URL (cached). Returns (prices, source-description)."""
+    import httpx
+
+    try:
+        resp = httpx.get(url, timeout=15.0, follow_redirects=True)
+        resp.raise_for_status()
+        prices = parse_price_payload(resp.text)
+        if prices:
+            try:
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_text(json.dumps(prices), encoding="utf-8")
+            except OSError:
+                pass
+            return prices, f"online rate card ({url})"
+        logger.warning("Online price source returned no usable rows: %s", url)
+    except Exception as exc:  # noqa: BLE001 — network/parse errors -> fall back to cache
+        logger.warning("Could not fetch online prices (%s): %s", type(exc).__name__, exc)
+
+    # Offline / failed: use the cached copy if present.
+    if cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            return {str(k): float(v) for k, v in cached.items()}, f"cached rate card ({url})"
+        except (OSError, ValueError, json.JSONDecodeError):
+            pass
+    return {}, "local price map"
 
 
 # --------------------------------------------------------------------------- #

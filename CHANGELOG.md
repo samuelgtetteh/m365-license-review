@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-16
+
+### Added
+- **Subscription expirations** — new audit + a dedicated export section in every
+  format (Excel sheet, Word section, JSON `subscription_expirations` block). Pulls
+  renewal/expiry dates from `/directory/subscriptions`, flags expired / expiring-soon
+  (rule **R8**), and degrades gracefully if the endpoint is unavailable.
+- **R4 — duplicate/overlapping licenses** — flags users holding a SKU that a
+  superset license already covers (data-driven via `config/sku_overlaps.yaml`).
+- **Online pricing** — optional `PRICE_SOURCE_URL` fetches a rate card (JSON/CSV)
+  at runtime, caches it, and falls back to the local yaml when offline. The report
+  notes which source was used.
+- **Report branding** — optional `REPORT_COMPANY_NAME` adds "Prepared by …"; the
+  Excel summary gains a findings-by-severity pie chart.
+
+### Changed / engineering
+- **CI** now runs the test suite on every push/PR, and the image publish is gated
+  on tests passing.
+- Test coverage extended to the Graph client (GET-only guard, pagination, 429
+  retry, 403 scope handling) — suite now at 45 tests.
+- Added `SECURITY.md`, Dependabot, and issue/PR templates.
+
 ## [0.1.1] - 2026-07-16
 
 ### Added
@@ -47,5 +69,6 @@ Initial release.
   and a tenant-specific authority; tenants that block device code via Conditional
   Access should use the web app.
 
+[0.2.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.2.0
 [0.1.1]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.1
 [0.1.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.0

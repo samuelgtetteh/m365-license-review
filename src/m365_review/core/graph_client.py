@@ -26,6 +26,7 @@ from m365_review.core.auth import TenantSession
 logger = logging.getLogger(__name__)
 
 GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+GRAPH_BASE_BETA = "https://graph.microsoft.com/beta"
 _MAX_RETRIES = 5
 _BACKOFF_BASE = 1.5  # seconds
 _DEFAULT_TIMEOUT = httpx.Timeout(60.0, connect=15.0)

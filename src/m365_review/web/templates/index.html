@@ -5,100 +5,149 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>M365 License Review</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <script src="/static/theme.js"></script>
 </head>
 <body>
   <main class="wrap">
+    <button id="theme-toggle" type="button" aria-label="Toggle light/dark theme">☀ Light</button>
     <header>
       <h1>M365 License Review</h1>
       <p class="sub">Read-only Microsoft&nbsp;365 license optimization &middot; v{{ version }}</p>
       <p class="topnav"><a href="/help">Help &amp; guidance &rarr;</a></p>
     </header>
 
-    {% if not client_id_configured %}
+    {% if not client_id_configured and not profiles %}
     <div class="banner warn">
-      <strong>Azure app client ID not configured.</strong>
-      Set <code>AZURE_APP_CLIENT_ID</code> in your <code>.env</code> (see the README),
-      or paste it below before signing in.
+      <strong>First run:</strong> add a profile (name + Azure app client ID) on the
+      <em>Run audit</em> tab, or set <code>AZURE_APP_CLIENT_ID</code> in <code>.env</code>.
     </div>
     {% endif %}
 
-    <section class="card">
-      <h2>1 &middot; Audit options</h2>
-      <form id="audit-form" action="/auth/login" method="get">
-        <fieldset>
-          <legend>Tenant / client profile</legend>
+    <!-- Tab bar -->
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="run" role="tab">▶ Run audit</button>
+      <button class="tab" data-tab="checks" role="tab">🔎 What we check</button>
+      <button class="tab" data-tab="outputs" role="tab">📄 Reports</button>
+      <button class="tab" data-tab="cli" role="tab">⌨ Command line</button>
+      <button class="tab" data-tab="security" role="tab">🔒 Security</button>
+    </div>
 
-          {% if profiles %}
-          <label>Use a saved profile
-            <select name="profile" id="profile-select">
-              <option value="">— choose a saved client —</option>
-              {% for p in profiles %}
-              <option value="{{ p.name }}">{{ p.name }}{% if p.last_tenant_name %} · last: {{ p.last_tenant_name }}{% endif %}</option>
-              {% endfor %}
-              <option value="__new__">➕ Add a new profile…</option>
-            </select>
-          </label>
-          {% endif %}
-
-          <div id="new-profile" {% if profiles %}style="display:none"{% endif %}>
-            <label>Profile name <span class="opt">(saved for next time)</span>
-              <input type="text" name="new_profile_name" placeholder="e.g. Contoso Ltd" />
+    <!-- ============ RUN AUDIT ============ -->
+    <section class="panel active" id="tab-run" role="tabpanel">
+      <div class="card">
+        <h2>Start a review</h2>
+        <form id="audit-form" action="/auth/login" method="get">
+          <fieldset>
+            <legend>Tenant / client profile</legend>
+            {% if profiles %}
+            <label>Use a saved profile
+              <select name="profile" id="profile-select">
+                <option value="">— choose a saved client —</option>
+                {% for p in profiles %}
+                <option value="{{ p.name }}">{{ p.name }}{% if p.last_tenant_name %} · last: {{ p.last_tenant_name }}{% endif %}</option>
+                {% endfor %}
+                <option value="__new__">➕ Add a new profile…</option>
+              </select>
             </label>
-            <label>Azure app client ID
-              <input type="text" name="client_id"
-                     value="{{ '' if not client_id_configured else default_client_id }}"
-                     placeholder="00000000-0000-0000-0000-000000000000" />
-            </label>
-            {% if client_id_configured %}
-            <p class="hint">Pre-filled from <code>AZURE_APP_CLIENT_ID</code>. Give it a
-               name to save it as a reusable profile.</p>
             {% endif %}
-          </div>
-        </fieldset>
+            <div id="new-profile" {% if profiles %}style="display:none"{% endif %}>
+              <label>Profile name <span class="opt">(saved for next time)</span>
+                <input type="text" name="new_profile_name" placeholder="e.g. Contoso Ltd" />
+              </label>
+              <label>Azure app client ID
+                <input type="text" name="client_id"
+                       value="{{ '' if not client_id_configured else default_client_id }}"
+                       placeholder="00000000-0000-0000-0000-000000000000" />
+              </label>
+            </div>
+          </fieldset>
 
-        <fieldset>
-          <legend>Output formats</legend>
-          <label class="chk"><input type="checkbox" name="formats" value="xlsx" checked /> Excel (.xlsx)</label>
-          <label class="chk"><input type="checkbox" name="formats" value="docx" checked /> Word (.docx)</label>
-          <label class="chk"><input type="checkbox" name="formats" value="json" checked /> JSON (.json)</label>
-        </fieldset>
+          <fieldset>
+            <legend>Output formats</legend>
+            <label class="chk"><input type="checkbox" name="formats" value="xlsx" checked /> Excel (.xlsx)</label>
+            <label class="chk"><input type="checkbox" name="formats" value="docx" checked /> Word (.docx)</label>
+            <label class="chk"><input type="checkbox" name="formats" value="json" checked /> JSON (.json)</label>
+          </fieldset>
 
-        <label class="chk">
-          <input type="checkbox" name="experimental" value="1" />
-          Enable experimental rules (R5&ndash;R7)
-        </label>
+          <label class="chk">
+            <input type="checkbox" name="experimental" value="1" />
+            Enable experimental rules
+          </label>
 
-        <button type="submit" class="primary">Sign in to a client tenant &rarr;</button>
-        <p class="hint">
-          You'll be redirected to Microsoft, sign in as a <em>client tenant admin</em>,
-          and approve read-only consent. The tool never writes to the tenant.
-        </p>
-      </form>
-    </section>
-
-    <section class="card">
-      <h2>2 &middot; Prefer the command line?</h2>
-      <p class="hint">
-        The web app and the CLI share the same engine. This is the equivalent
-        command for the options selected above &mdash; copy it to script or automate runs.
-      </p>
-      <div class="cli-row">
-        <pre id="cli-cmd"><code>m365-review run --format xlsx --format docx --format json</code></pre>
-        <button type="button" id="copy-cli" class="ghost">Copy</button>
+          <button type="submit" class="primary">Sign in to a client tenant &rarr;</button>
+          <p class="hint">
+            You'll be sent to Microsoft, sign in as a <em>client tenant admin</em>, and
+            approve read-only consent. The tool never writes to the tenant.
+          </p>
+        </form>
       </div>
-      <p class="hint">
-        Run headless in the container:
-        <code>docker compose run --rm m365-review m365-review run ...</code>
-      </p>
     </section>
 
-    <section class="card muted">
-      <h2>Read-only guarantee</h2>
-      <p>This tool requests only these delegated Graph scopes and makes only
-         <code>GET</code> calls:</p>
-      <ul class="scopes">
-        {% for s in scopes %}<li><code>{{ s }}</code></li>{% endfor %}
-      </ul>
+    <!-- ============ WHAT WE CHECK ============ -->
+    <section class="panel" id="tab-checks" role="tabpanel">
+      <div class="card">
+        <h2>What the audit checks</h2>
+        <div class="feature-grid">
+          <div class="feature"><span class="tag high">R1</span><h3>Disabled users with licenses</h3><p>Licenses still assigned to disabled accounts — pure waste.</p></div>
+          <div class="feature"><span class="tag med">R2</span><h3>Inactive users (90 days)</h3><p>Licensed, enabled users with no sign-in in 90 days. Degrades gracefully without Entra P1.</p></div>
+          <div class="feature"><span class="tag med">R3</span><h3>Unassigned licenses</h3><p>Purchased seats nobody is using — reclaim at renewal.</p></div>
+          <div class="feature"><span class="tag med">R4</span><h3>Duplicate / overlapping</h3><p>Users holding a SKU a superset license already covers (e.g. E5 + E3).</p></div>
+          <div class="feature"><span class="tag high">R8</span><h3>Expiring subscriptions</h3><p>Subscriptions expired or expiring within 30 days — renew, resize, or cancel.</p></div>
+          <div class="feature"><span class="tag info">✓</span><h3>Paid vs. free split</h3><p>Free/self-service SKUs and inactive subscriptions are separated, not counted as spend.</p></div>
+        </div>
+        <p class="hint">Product names are shown in Microsoft's friendly form everywhere. More
+           checks (MFA gaps, admin-role audit, guests) are on the roadmap.</p>
+      </div>
+    </section>
+
+    <!-- ============ REPORTS ============ -->
+    <section class="panel" id="tab-outputs" role="tabpanel">
+      <div class="card">
+        <h2>What you get</h2>
+        <div class="feature-grid">
+          <div class="feature"><span class="tag">XLSX</span><h3>Excel</h3><p>Optimization summary + severity chart, paid/free inventory, expirations, per-rule detail, hidden raw data.</p></div>
+          <div class="feature"><span class="tag">DOCX</span><h3>Word</h3><p>Client-ready narrative led by the optimization summary, with findings and expirations tables.</p></div>
+          <div class="feature"><span class="tag">JSON</span><h3>JSON</h3><p>Full structured result (optimization summary, paid/free inventory, subscription expirations) for automation.</p></div>
+        </div>
+        <ul class="ticks">
+          <li>Every report leads with a <strong>License Optimization Summary</strong> — prioritized actions + monthly/annual $ savings.</li>
+          <li>A dedicated <strong>Subscription Expirations</strong> section (dates, days remaining, expired/soon flags).</li>
+          <li>Optional <strong>“Prepared by …”</strong> company branding.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ CLI ============ -->
+    <section class="panel" id="tab-cli" role="tabpanel">
+      <div class="card">
+        <h2>Prefer the command line?</h2>
+        <p class="hint">The web app and CLI share one engine. This is the equivalent command
+           for the options on the <em>Run audit</em> tab &mdash; copy it to script or automate.</p>
+        <div class="cli-row">
+          <pre id="cli-cmd"><code>m365-review run --format xlsx --format docx --format json</code></pre>
+          <button type="button" id="copy-cli" class="ghost">Copy</button>
+        </div>
+        <p class="hint">In the container (Rancher or Docker Desktop):</p>
+        <pre><code>docker compose run --rm m365-review m365-review run --profile "Contoso" --tenant contoso.com
+docker compose run --rm m365-review m365-review profiles list</code></pre>
+        <p class="hint">See the <a href="/help#cli">Help page</a> for the full CLI guide.</p>
+      </div>
+    </section>
+
+    <!-- ============ SECURITY ============ -->
+    <section class="panel" id="tab-security" role="tabpanel">
+      <div class="card">
+        <h2>Read-only guarantee</h2>
+        <ul class="ticks">
+          <li>Only <strong>read</strong> scopes are requested and only <code>GET</code> calls are made — enforced by a runtime guard.</li>
+          <li>Your access token stays <strong>in memory</strong> for the run only — never logged, saved, or put in a report.</li>
+          <li>Reports contain client PII — store them somewhere access-controlled.</li>
+        </ul>
+        <p class="hint">Delegated Graph scopes requested:</p>
+        <ul class="scopes">
+          {% for s in scopes %}<li><code>{{ s }}</code></li>{% endfor %}
+        </ul>
+      </div>
     </section>
 
     <footer>
@@ -107,26 +156,33 @@
   </main>
 
   <script>
+    // --- Tabs ---
+    const tabs = document.querySelectorAll('.tab');
+    const panels = document.querySelectorAll('.panel');
+    tabs.forEach(t => t.addEventListener('click', () => {
+      tabs.forEach(x => x.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+    }));
+
+    // --- Form-driven bits (work regardless of which tab is visible) ---
     const form = document.getElementById('audit-form');
     const cli = document.querySelector('#cli-cmd code');
     const select = document.getElementById('profile-select');
     const newBlock = document.getElementById('new-profile');
 
-    // Toggle the "add new profile" fields based on the dropdown.
     function syncProfileUI() {
       if (!select) return;
       newBlock.style.display = (select.value === '__new__') ? 'block' : 'none';
     }
     if (select) select.addEventListener('change', () => { syncProfileUI(); rebuildCli(); });
 
-    // Keep the "equivalent CLI command" panel in sync with the form selections.
     function rebuildCli() {
       const fmts = [...form.querySelectorAll('input[name="formats"]:checked')].map(i => i.value);
       const exp = form.querySelector('input[name="experimental"]').checked;
       let cmd = 'm365-review run';
-      if (select && select.value && select.value !== '__new__') {
-        cmd += ` --profile "${select.value}"`;
-      }
+      if (select && select.value && select.value !== '__new__') cmd += ` --profile "${select.value}"`;
       for (const f of fmts) cmd += ` --format ${f}`;
       if (exp) cmd += ' --enable-experimental-rules';
       cli.textContent = cmd;

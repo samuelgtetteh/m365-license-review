@@ -1,0 +1,40 @@
+{
+  "value": [
+    {
+      "skuId": "sub-e3",
+      "skuPartNumber": "SPE_E3",
+      "status": "Enabled",
+      "totalLicenses": 25,
+      "isTrial": false,
+      "createdDateTime": "2024-01-01T00:00:00Z",
+      "nextLifecycleDateTime": "2027-01-01T00:00:00Z"
+    },
+    {
+      "skuId": "sub-e5",
+      "skuPartNumber": "SPE_E5",
+      "status": "Enabled",
+      "totalLicenses": 10,
+      "isTrial": false,
+      "createdDateTime": "2025-07-16T00:00:00Z",
+      "nextLifecycleDateTime": "2026-07-30T00:00:00Z"
+    },
+    {
+      "skuId": "sub-exo",
+      "skuPartNumber": "EXCHANGESTANDARD",
+      "status": "Suspended",
+      "totalLicenses": 5,
+      "isTrial": false,
+      "createdDateTime": "2023-01-01T00:00:00Z",
+      "nextLifecycleDateTime": "2026-06-01T00:00:00Z"
+    },
+    {
+      "skuId": "sub-trial",
+      "skuPartNumber": "FLOW_FREE",
+      "status": "Enabled",
+      "totalLicenses": 100,
+      "isTrial": true,
+      "createdDateTime": "2026-07-01T00:00:00Z",
+      "nextLifecycleDateTime": "2026-08-01T00:00:00Z"
+    }
+  ]
+}

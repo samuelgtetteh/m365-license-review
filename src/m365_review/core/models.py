@@ -95,6 +95,47 @@ class SubscribedSku(BaseModel):
         )
 
 
+class Subscription(BaseModel):
+    """A commerce subscription (from /directory/subscriptions) with dates.
+
+    This is where expiration/renewal information lives — /subscribedSkus has none.
+    """
+
+    sku_id: str
+    sku_part_number: str
+    display_name: str = ""          # filled by the engine via the pricing catalog
+    status: str | None = None       # Enabled | Warning | Suspended | Deleted | LockedOut
+    total_licenses: int = 0
+    is_trial: bool = False
+    created_datetime: datetime | None = None
+    next_lifecycle_datetime: datetime | None = None   # next renewal or expiration
+
+    def days_until_expiry(self, now: datetime) -> int | None:
+        if self.next_lifecycle_datetime is None:
+            return None
+        return (self.next_lifecycle_datetime - now).days
+
+    def is_expired(self, now: datetime) -> bool:
+        d = self.days_until_expiry(now)
+        return d is not None and d < 0
+
+    def is_expiring_within(self, now: datetime, days: int) -> bool:
+        d = self.days_until_expiry(now)
+        return d is not None and 0 <= d <= days
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "Subscription":
+        return cls(
+            sku_id=data.get("skuId", ""),
+            sku_part_number=data.get("skuPartNumber", ""),
+            status=data.get("status"),
+            total_licenses=int(data.get("totalLicenses", 0) or 0),
+            is_trial=bool(data.get("isTrial", False)),
+            created_datetime=_parse_dt(data.get("createdDateTime")),
+            next_lifecycle_datetime=_parse_dt(data.get("nextLifecycleDateTime")),
+        )
+
+
 class User(BaseModel):
     id: str
     display_name: str | None = None
@@ -212,6 +253,7 @@ class TenantData(BaseModel):
     organization: Organization
     tenant_id: str
     skus: list[SubscribedSku] = Field(default_factory=list)
+    subscriptions: list[Subscription] = Field(default_factory=list)
     users: list[User] = Field(default_factory=list)
     # Usage-report rows (populated only when experimental rules are enabled).
     active_user_detail: list[dict] = Field(default_factory=list)
@@ -220,6 +262,7 @@ class TenantData(BaseModel):
     onedrive_usage_detail: list[dict] = Field(default_factory=list)
     # Data-quality flags surfaced in the report.
     sign_in_activity_available: bool = True
+    subscriptions_available: bool = True
     report_names_concealed: bool = False
 
 
@@ -234,11 +277,30 @@ class AuditResult(BaseModel):
     total_purchased: int = 0
     total_assigned: int = 0
     caveats: list[str] = Field(default_factory=list)
+    # Subscription expiration data (exported as its own report section).
+    subscriptions: list[Subscription] = Field(default_factory=list)
+    subscriptions_available: bool = True   # False if the endpoint was unavailable
     # Maps a license skuId (GUID) -> friendly product name, so any raw GUID
     # reference (e.g. the raw-data sheet) can be shown in human-readable form.
     sku_id_to_name: dict[str, str] = Field(default_factory=dict)
     # Retained for the hidden "raw data" sheet / json export.
     tenant_data: TenantData | None = None
+
+    def expiration_summary(self) -> dict[str, int]:
+        """Counts of subscriptions by expiry proximity (relative to generated_at)."""
+        now = self.generated_at
+        counts = {"expired": 0, "within_30": 0, "within_60": 0, "within_90": 0, "total": 0}
+        for s in self.subscriptions:
+            counts["total"] += 1
+            if s.is_expired(now):
+                counts["expired"] += 1
+            elif s.is_expiring_within(now, 30):
+                counts["within_30"] += 1
+            elif s.is_expiring_within(now, 60):
+                counts["within_60"] += 1
+            elif s.is_expiring_within(now, 90):
+                counts["within_90"] += 1
+        return counts
 
     @property
     def report_date(self) -> date:

@@ -82,6 +82,15 @@ def write_docx(result: AuditResult, path: Path) -> Path:
         f"{result.tenant_display_name}  ·  {result.report_date.isoformat()}"
     ).italic = True
 
+    from m365_review.settings import get_settings
+
+    _company = get_settings().report_company_name
+    if _company:
+        prep = doc.add_paragraph()
+        r = prep.add_run(f"Prepared by {_company}")
+        r.font.color.rgb = _GREY
+        r.font.size = Pt(9)
+
     # --- Tenant facts ---
     facts = doc.add_paragraph()
     facts.add_run("Tenant ID: ").bold = True
@@ -179,6 +188,35 @@ def write_docx(result: AuditResult, path: Path) -> Path:
         _inventory_table(
             doc, "Free / self-service licenses (excluded from totals)", free, show_costs=False
         )
+
+    # --- Subscription expirations (its own section) ---
+    doc.add_heading("Subscription expirations", level=1)
+    if not result.subscriptions_available:
+        doc.add_paragraph("Subscription/expiration data was unavailable for this tenant.")
+    elif not result.subscriptions:
+        doc.add_paragraph("No subscriptions were returned for this tenant.")
+    else:
+        summ = result.expiration_summary()
+        doc.add_paragraph(
+            f"{summ['total']} subscription(s): {summ['expired']} expired, "
+            f"{summ['within_30']} expiring within 30 days, {summ['within_60']} within 60, "
+            f"{summ['within_90']} within 90."
+        )
+        exp = doc.add_table(rows=1, cols=6)
+        exp.style = "Light Grid Accent 1"
+        for i, text in enumerate(["Product", "Status", "Licenses", "Renews/Expires", "Days left", "Trial"]):
+            exp.rows[0].cells[i].paragraphs[0].add_run(text)
+        _style_header_row(exp)
+        now = result.generated_at
+        for s in result.subscriptions:
+            days = s.days_until_expiry(now)
+            c = exp.add_row().cells
+            c[0].text = s.display_name or s.sku_part_number
+            c[1].text = s.status or ""
+            c[2].text = str(s.total_licenses)
+            c[3].text = s.next_lifecycle_datetime.date().isoformat() if s.next_lifecycle_datetime else "—"
+            c[4].text = str(days) if days is not None else "—"
+            c[5].text = "Yes" if s.is_trial else ""
 
     # --- Caveats ---
     if result.caveats:

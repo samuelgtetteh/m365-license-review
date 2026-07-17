@@ -134,17 +134,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
 | **R1** | Licenses assigned to disabled users |
 | **R2** | Licenses on users with no sign-in in 90 days (degrades gracefully without Azure AD P1) |
 | **R3** | Unassigned purchased licenses (owned − assigned) |
+| **R4** | Duplicate / overlapping licenses on one user (data-driven overlap table) |
+| **R8** | Subscriptions expired or expiring within 30 days |
 
-Rules R4–R7 (duplicate SKUs, E5 under-use, oversized shared mailboxes, licensed
-guests) are planned; experimental ones will be gated behind
-`--enable-experimental-rules`.
+Remaining rules (E5 under-use, oversized shared mailboxes, licensed guests, and
+the security-posture checks) are on the [audit roadmap](docs/AUDIT_ROADMAP.md);
+experimental ones are gated behind `--enable-experimental-rules`.
 
 ### The report
 
 Every format leads with a **License Optimization Summary** — prioritized
-recommendations with estimated monthly and annual savings — followed by
-per-finding detail and a full license inventory. The Excel workbook adds a
-hidden raw-data sheet for auditability.
+recommendations with estimated monthly/annual savings — then per-finding detail,
+a **paid vs. free** license inventory, and a dedicated **Subscription Expirations**
+section. Excel adds a findings-by-severity chart and a hidden raw-data sheet;
+optional `REPORT_COMPANY_NAME` branding appears on all formats.
 
 ---
 

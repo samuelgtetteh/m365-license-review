@@ -16,6 +16,8 @@ from m365_review.core.rules import (
     r1_disabled_licensed,
     r2_inactive_licensed,
     r3_unassigned_licenses,
+    r4_duplicate_skus,
+    r8_expiring_subscriptions,
 )
 from m365_review.core.rules.base import Rule, RuleContext
 
@@ -23,10 +25,12 @@ logger = logging.getLogger(__name__)
 
 # Ordered list of registered rule modules. Each satisfies the Rule protocol.
 REGISTERED: list[Rule] = [
-    r1_disabled_licensed,   # type: ignore[list-item]
-    r2_inactive_licensed,   # type: ignore[list-item]
-    r3_unassigned_licenses,  # type: ignore[list-item]
-    # R4-R7 appended here as they are built.
+    r1_disabled_licensed,     # type: ignore[list-item]
+    r2_inactive_licensed,     # type: ignore[list-item]
+    r3_unassigned_licenses,   # type: ignore[list-item]
+    r4_duplicate_skus,        # type: ignore[list-item]
+    r8_expiring_subscriptions,  # type: ignore[list-item]
+    # R5-R7 appended here as they are built.
 ]
 
 

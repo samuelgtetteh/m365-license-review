@@ -35,6 +35,7 @@ def test_xlsx_sheets_and_hidden_raw(tenant_data, pricing, now, tmp_path):
         "Summary",
         "License Optimization",
         "License Inventory",
+        "Subscription Expirations",
         "Detail - Disabled Users",
         "Detail - Inactive Users",
         "Raw Data",

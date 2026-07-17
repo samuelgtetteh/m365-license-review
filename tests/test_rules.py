@@ -149,6 +149,22 @@ def test_inactive_skus_excluded_and_grace_counted(tenant_data, pricing, now):
     assert any("Inactive" in c for c in result.caveats)
 
 
+def test_r4_flags_overlapping_licenses(tenant_data, pricing, now):
+    from m365_review.core.rules import r4_duplicate_skus
+
+    # Give a user BOTH E5 and E3 (E5 supersedes E3 per sku_overlaps.yaml).
+    data = tenant_data.model_copy(deep=True)
+    e3_id = "sku-e3-0000-0000-0000-000000000001"
+    e5_id = "sku-e5-0000-0000-0000-000000000002"
+    data.users[0].assigned_license_sku_ids = [e5_id, e3_id]
+
+    findings = r4_duplicate_skus.evaluate(_ctx(data, pricing, now))
+    assert len(findings) == 1
+    f = findings[0]
+    assert "Microsoft 365 E3" in f.title           # E3 is the redundant one
+    assert f.estimated_monthly_savings_usd == 36.0  # E3 list price recovered
+
+
 def test_guest_and_unlicensed_not_flagged_in_v1(tenant_data, pricing, now):
     findings = run_all(_ctx(tenant_data, pricing, now))
     all_upns = {u.user_principal_name for f in findings for u in f.affected_users}
