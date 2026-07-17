@@ -38,6 +38,8 @@ def test_xlsx_sheets_and_hidden_raw(tenant_data, pricing, now, tmp_path):
         "Subscription Expirations",
         "Detail - Disabled Users",
         "Detail - Inactive Users",
+        "Detail - MFA",
+        "Detail - Admin Roles",
         "Raw Data",
     ]
     assert wb["Raw Data"].sheet_state == "hidden"
@@ -47,8 +49,8 @@ def test_json_optimization_summary(tenant_data, pricing, now):
     result = _result(tenant_data, pricing, now)
     payload = build_json_payload(result)
     summ = payload["optimization_summary"]
-    assert summ["total_estimated_monthly_savings_usd"] == 729.0
-    assert summ["total_estimated_annual_savings_usd"] == 8748.0
+    assert summ["total_estimated_monthly_savings_usd"] == 765.0
+    assert summ["total_estimated_annual_savings_usd"] == 765.0 * 12
     assert summ["finding_count"] == len(payload["findings"])
     assert payload["tenant"]["display_name"] == "Contoso Ltd"
 

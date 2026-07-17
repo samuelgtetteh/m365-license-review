@@ -20,6 +20,7 @@ from typing import Awaitable, Callable
 from m365_review.core.auth import TenantSession
 from m365_review.core.fetchers.organization import fetch_organization
 from m365_review.core.fetchers.skus import fetch_subscribed_skus
+from m365_review.core.fetchers.security import fetch_directory_roles, fetch_user_registration
 from m365_review.core.fetchers.subscriptions import fetch_subscriptions
 from m365_review.core.fetchers.users import fetch_users
 from m365_review.core.graph_client import GraphClient
@@ -66,8 +67,11 @@ async def fetch_tenant_data(
         await _emit(progress, "Reading users and license assignments", 0.6)
         users_result = await fetch_users(gc)
 
-        # Usage-report fetchers (for experimental rules) land with R5/R6/R7.
-        await _emit(progress, "Compiling tenant data", 0.8)
+        await _emit(progress, "Reading MFA registration & admin roles", 0.72)
+        registration, mfa_available = await fetch_user_registration(gc)
+        roles, roles_available = await fetch_directory_roles(gc)
+
+        await _emit(progress, "Compiling tenant data", 0.82)
 
     if session.tenant_display_name is None:
         session.tenant_display_name = org.display_name
@@ -78,8 +82,12 @@ async def fetch_tenant_data(
         skus=skus,
         subscriptions=subscriptions,
         users=users_result.users,
+        user_registration=registration,
+        directory_roles=roles,
         sign_in_activity_available=users_result.sign_in_activity_available,
         subscriptions_available=subs_available,
+        mfa_data_available=mfa_available,
+        roles_available=roles_available,
     )
 
 
@@ -196,6 +204,13 @@ def _build_caveats(
             "Subscription expiration data was unavailable (the /directory/subscriptions "
             "endpoint did not return data for this tenant), so the expirations section is empty."
         )
+    if not data.mfa_data_available:
+        caveats.append(
+            "MFA registration data was unavailable (the signed-in admin may lack rights to read "
+            "the authentication-methods report), so the MFA checks were skipped."
+        )
+    if not data.roles_available:
+        caveats.append("Directory role data was unavailable, so the admin-role audit was skipped.")
     if not data.sign_in_activity_available:
         caveats.append(
             "Sign-in activity was unavailable (tenant lacks Azure AD P1), so inactivity-based "

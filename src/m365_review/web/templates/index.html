@@ -93,10 +93,14 @@
           <div class="feature"><span class="tag med">R3</span><h3>Unassigned licenses</h3><p>Purchased seats nobody is using — reclaim at renewal.</p></div>
           <div class="feature"><span class="tag med">R4</span><h3>Duplicate / overlapping</h3><p>Users holding a SKU a superset license already covers (e.g. E5 + E3).</p></div>
           <div class="feature"><span class="tag high">R8</span><h3>Expiring subscriptions</h3><p>Subscriptions expired or expiring within 30 days — renew, resize, or cancel.</p></div>
+          <div class="feature"><span class="tag med">R7</span><h3>Licensed guests</h3><p>Guest accounts holding licenses they usually don't need (they use their home tenant's).</p></div>
+          <div class="feature"><span class="tag high">R9</span><h3>Users without MFA</h3><p>Member accounts with no registered MFA method — a top account-takeover risk.</p></div>
+          <div class="feature"><span class="tag high">R10</span><h3>Admin audit</h3><p>Admins without MFA, and too many Global Administrators (least-privilege).</p></div>
           <div class="feature"><span class="tag info">✓</span><h3>Paid vs. free split</h3><p>Free/self-service SKUs and inactive subscriptions are separated, not counted as spend.</p></div>
         </div>
-        <p class="hint">Product names are shown in Microsoft's friendly form everywhere. More
-           checks (MFA gaps, admin-role audit, guests) are on the roadmap.</p>
+        <p class="hint">Product names are shown in Microsoft's friendly form everywhere. Cost checks
+           plus identity-security checks (MFA, admin roles, guests). More (E5 under-use, oversized
+           mailboxes, legacy auth) are on the roadmap.</p>
       </div>
     </section>
 

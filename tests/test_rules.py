@@ -88,7 +88,8 @@ def test_run_all_sorts_by_severity_and_totals(tenant_data, pricing, now):
     ranks = [f.severity.rank for f in findings]
     assert ranks == sorted(ranks, reverse=True)   # high first
     total = round(sum(f.estimated_monthly_savings_usd for f in findings), 2)
-    assert total == 729.0
+    # R1 57 + R2 93 + R3 (399+180) + R7 guest (Frank E3 36) = 765; R8/R9/R10 add $0.
+    assert total == 765.0
 
 
 def test_free_unlimited_skus_excluded_from_totals_and_r3(tenant_data, pricing, now):
@@ -165,8 +166,17 @@ def test_r4_flags_overlapping_licenses(tenant_data, pricing, now):
     assert f.estimated_monthly_savings_usd == 36.0  # E3 list price recovered
 
 
-def test_guest_and_unlicensed_not_flagged_in_v1(tenant_data, pricing, now):
+def test_r7_flags_licensed_guest(tenant_data, pricing, now):
+    from m365_review.core.rules import r7_licensed_guests
+
+    findings = r7_licensed_guests.evaluate(_ctx(tenant_data, pricing, now))
+    assert len(findings) == 1
+    upns = {u.user_principal_name for u in findings[0].affected_users}
+    assert any("frank" in (u or "") for u in upns)   # Frank is a licensed guest
+    assert findings[0].estimated_monthly_savings_usd == 36.0   # E3 list price
+
+
+def test_unlicensed_user_never_flagged(tenant_data, pricing, now):
     findings = run_all(_ctx(tenant_data, pricing, now))
     all_upns = {u.user_principal_name for f in findings for u in f.affected_users}
-    assert not any("frank" in (u or "") for u in all_upns)   # guest -> R7 (experimental, off)
-    assert "grace@contoso.com" not in all_upns               # unlicensed
+    assert "grace@contoso.com" not in all_upns       # unlicensed, active

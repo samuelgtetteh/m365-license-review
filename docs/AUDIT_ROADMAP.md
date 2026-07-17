@@ -56,10 +56,10 @@ three formats + rule **R8** "expiring soon" + fixtures/tests).
 | EXP | Subscription expiration / renewal dates (separate export) | Licensing | High | M | No | ✅ done (v0.2.0) |
 | R4  | Duplicate / overlapping SKUs on one user | Licensing | High | S | No | ✅ done (v0.2.0) |
 | LIC-GRP | Group-based license assignment **errors** (`licenseAssignmentStates`) | Licensing | High | S | No | planned |
-| GUEST/R7 | Licensed & stale guest users | Identity/Cost | High | S | No | planned |
+| GUEST/R7 | Licensed guest users | Identity/Cost | High | S | No | ✅ done (v0.3.0) |
 | STALE | Inactive / never-signed-in accounts (all, not just licensed) | Identity | High | S | No (P1-gated) | planned |
-| MFA | Users without MFA registered | Security | High | M | Maybe¹ | planned |
-| ADMIN | Privileged-role audit (Global Admin count, admins w/o MFA) | Security | High | M | Maybe² | planned |
+| MFA/R9 | Users without MFA registered | Security | High | M | No | ✅ done (v0.3.0) |
+| ADMIN/R10 | Privileged-role audit (Global Admin count, admins w/o MFA) | Security | High | M | No | ✅ done (v0.3.0) |
 | LIC-SVC | Disabled service plans inside assigned SKUs (paying for off features) | Licensing | Med | M | No | planned |
 | R6  | Shared mailboxes > 50 GB needing a license | Compliance | Med | M | No | planned |
 | TRIAL | Trial subscriptions about to expire/convert | Licensing | Med | S | No | planned (folds into EXP) |

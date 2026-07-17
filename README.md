@@ -135,11 +135,14 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full design.
 | **R2** | Licenses on users with no sign-in in 90 days (degrades gracefully without Azure AD P1) |
 | **R3** | Unassigned purchased licenses (owned − assigned) |
 | **R4** | Duplicate / overlapping licenses on one user (data-driven overlap table) |
+| **R7** | Licensed guest users |
 | **R8** | Subscriptions expired or expiring within 30 days |
+| **R9** | Users without MFA registered (security) |
+| **R10** | Admin audit — admins without MFA, too many Global Administrators (security) |
 
-Remaining rules (E5 under-use, oversized shared mailboxes, licensed guests, and
-the security-posture checks) are on the [audit roadmap](docs/AUDIT_ROADMAP.md);
-experimental ones are gated behind `--enable-experimental-rules`.
+Remaining rules (E5 under-use, oversized shared mailboxes, legacy-auth) are on the
+[audit roadmap](docs/AUDIT_ROADMAP.md); experimental ones are gated behind
+`--enable-experimental-rules`.
 
 ### The report
 

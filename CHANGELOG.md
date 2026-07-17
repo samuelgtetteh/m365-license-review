@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-07-16
+
+### Added — identity-security audits
+- **R9 — Users without MFA registered.** Member accounts with no registered MFA
+  method (from `reports/authenticationMethods/userRegistrationDetails`).
+- **R10 — Privileged role / admin audit.** Admins without MFA, and too many Global
+  Administrators (from `/directoryRoles`).
+- **R7 — Licensed guest users.** Guests holding licenses they usually don't need.
+- New Excel detail sheets **Detail - MFA** and **Detail - Admin Roles**, plus an
+  `identity_security` block in the JSON export. Everything degrades gracefully
+  (and is noted in the report) if a tenant/admin can't return the data.
+- **Tabbed home page** (Run audit · What we check · Reports · Command line ·
+  Security) and a **light/dark theme toggle** that persists across pages.
+
+All new checks use the read-only scopes already requested — no new consent.
+
 ## [0.2.0] - 2026-07-16
 
 ### Added
@@ -69,6 +85,7 @@ Initial release.
   and a tenant-specific authority; tenants that block device code via Conditional
   Access should use the web app.
 
+[0.3.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.3.0
 [0.2.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.2.0
 [0.1.1]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.1
 [0.1.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.0

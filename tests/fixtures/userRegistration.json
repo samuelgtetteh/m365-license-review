@@ -1,0 +1,8 @@
+{
+  "value": [
+    {"userPrincipalName": "alice@contoso.com", "userDisplayName": "Alice Active", "userType": "member", "isAdmin": false, "isMfaRegistered": true, "isMfaCapable": true},
+    {"userPrincipalName": "carol@contoso.com", "userDisplayName": "Carol Stale", "userType": "member", "isAdmin": false, "isMfaRegistered": false, "isMfaCapable": true},
+    {"userPrincipalName": "dave@contoso.com", "userDisplayName": "Dave Never", "userType": "member", "isAdmin": false, "isMfaRegistered": false, "isMfaCapable": false},
+    {"userPrincipalName": "admin@contoso.com", "userDisplayName": "Global Admin", "userType": "member", "isAdmin": true, "isMfaRegistered": false, "isMfaCapable": true}
+  ]
+}

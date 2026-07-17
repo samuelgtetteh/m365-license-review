@@ -14,11 +14,13 @@ from pathlib import Path
 import pytest
 
 from m365_review.core.models import (
+    DirectoryRole,
     Organization,
     SubscribedSku,
     Subscription,
     TenantData,
     User,
+    UserRegistration,
 )
 from m365_review.core.pricing import load_pricing
 
@@ -48,11 +50,15 @@ def tenant_data() -> TenantData:
     skus = [SubscribedSku.from_graph(s) for s in _load("subscribedSkus.json")["value"]]
     subs = [Subscription.from_graph(s) for s in _load("subscriptions.json")["value"]]
     users = [User.from_graph(u) for u in _load("users.json")["value"]]
+    reg = [UserRegistration.from_graph(r) for r in _load("userRegistration.json")["value"]]
+    roles = [DirectoryRole.from_graph(r) for r in _load("directoryRoles.json")["value"]]
     return TenantData(
         organization=org,
         tenant_id=org.id,
         skus=skus,
         subscriptions=subs,
         users=users,
+        user_registration=reg,
+        directory_roles=roles,
         sign_in_activity_available=True,
     )

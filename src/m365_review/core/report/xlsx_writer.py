@@ -48,6 +48,8 @@ def write_xlsx(result: AuditResult, path: Path) -> Path:
     _expirations_sheet(wb.create_sheet("Subscription Expirations"), result)
     _disabled_detail_sheet(wb.create_sheet("Detail - Disabled Users"), result)
     _inactive_detail_sheet(wb.create_sheet("Detail - Inactive Users"), result)
+    _mfa_sheet(wb.create_sheet("Detail - MFA"), result)
+    _admin_roles_sheet(wb.create_sheet("Detail - Admin Roles"), result)
     _raw_sheet(wb.create_sheet("Raw Data"), result)
     wb.save(path)
     return path
@@ -352,6 +354,61 @@ def _disabled_detail_sheet(ws: Worksheet, result: AuditResult) -> None:
 
 def _inactive_detail_sheet(ws: Worksheet, result: AuditResult) -> None:
     _detail_from_rule(ws, result, "R2", "Activity")
+
+
+# --------------------------------------------------------------------------- #
+# Identity security detail (MFA + admin roles)
+# --------------------------------------------------------------------------- #
+
+def _mfa_sheet(ws: Worksheet, result: AuditResult) -> None:
+    headers = ["Display name", "User principal name", "Type", "Admin", "MFA registered"]
+    _header_row(ws, 1, headers)
+    data = result.tenant_data
+    reg = data.user_registration if data else []
+    if data and not data.mfa_data_available:
+        ws.cell(row=2, column=1, value="MFA registration data was unavailable for this tenant.").font = _SUBTLE
+        _autosize(ws, [26, 42, 10, 8, 16]); return
+    if not reg:
+        ws.cell(row=2, column=1, value="(no registration data)").font = _SUBTLE
+        _autosize(ws, [26, 42, 10, 8, 16]); return
+    row = 2
+    for u in sorted(reg, key=lambda r: (r.is_mfa_registered, not r.is_admin)):
+        ws.cell(row=row, column=1, value=u.display_name)
+        ws.cell(row=row, column=2, value=u.user_principal_name)
+        ws.cell(row=row, column=3, value=(u.user_type or "").capitalize())
+        ws.cell(row=row, column=4, value="Yes" if u.is_admin else "")
+        c = ws.cell(row=row, column=5, value="Yes" if u.is_mfa_registered else "No")
+        if not u.is_mfa_registered:
+            for col in range(1, len(headers) + 1):
+                ws.cell(row=row, column=col).fill = _HIGH_FILL if u.is_admin else _MED_FILL
+        row += 1
+    _autosize(ws, [26, 42, 10, 8, 16])
+
+
+def _admin_roles_sheet(ws: Worksheet, result: AuditResult) -> None:
+    headers = ["Role", "Member", "User principal name"]
+    _header_row(ws, 1, headers)
+    data = result.tenant_data
+    roles = [r for r in (data.directory_roles if data else []) if r.is_privileged]
+    if data and not data.roles_available:
+        ws.cell(row=2, column=1, value="Directory role data was unavailable for this tenant.").font = _SUBTLE
+        _autosize(ws, [34, 28, 42]); return
+    if not roles:
+        ws.cell(row=2, column=1, value="(no privileged roles returned)").font = _SUBTLE
+        _autosize(ws, [34, 28, 42]); return
+    row = 2
+    for role in sorted(roles, key=lambda r: r.display_name):
+        if not role.members:
+            ws.cell(row=row, column=1, value=role.display_name)
+            ws.cell(row=row, column=2, value="(no members)").font = _SUBTLE
+            row += 1
+            continue
+        for m in role.members:
+            ws.cell(row=row, column=1, value=role.display_name)
+            ws.cell(row=row, column=2, value=m.display_name)
+            ws.cell(row=row, column=3, value=m.user_principal_name)
+            row += 1
+    _autosize(ws, [34, 28, 42])
 
 
 # --------------------------------------------------------------------------- #

@@ -17,7 +17,10 @@ from m365_review.core.rules import (
     r2_inactive_licensed,
     r3_unassigned_licenses,
     r4_duplicate_skus,
+    r7_licensed_guests,
     r8_expiring_subscriptions,
+    r9_users_without_mfa,
+    r10_admin_audit,
 )
 from m365_review.core.rules.base import Rule, RuleContext
 
@@ -25,12 +28,15 @@ logger = logging.getLogger(__name__)
 
 # Ordered list of registered rule modules. Each satisfies the Rule protocol.
 REGISTERED: list[Rule] = [
-    r1_disabled_licensed,     # type: ignore[list-item]
-    r2_inactive_licensed,     # type: ignore[list-item]
-    r3_unassigned_licenses,   # type: ignore[list-item]
-    r4_duplicate_skus,        # type: ignore[list-item]
+    r1_disabled_licensed,       # type: ignore[list-item]
+    r2_inactive_licensed,       # type: ignore[list-item]
+    r3_unassigned_licenses,     # type: ignore[list-item]
+    r4_duplicate_skus,          # type: ignore[list-item]
+    r7_licensed_guests,         # type: ignore[list-item]
     r8_expiring_subscriptions,  # type: ignore[list-item]
-    # R5-R7 appended here as they are built.
+    r9_users_without_mfa,       # type: ignore[list-item]
+    r10_admin_audit,            # type: ignore[list-item]
+    # R5/R6 (E5 under-use, shared-mailbox size) appended here when built.
 ]
 
 

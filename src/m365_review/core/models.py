@@ -179,6 +179,64 @@ class User(BaseModel):
         )
 
 
+class UserRegistration(BaseModel):
+    """Per-user auth-method registration (from reports/authenticationMethods)."""
+
+    user_principal_name: str | None = None
+    display_name: str | None = None
+    user_type: str | None = None          # "member" | "guest"
+    is_admin: bool = False
+    is_mfa_registered: bool = False
+    is_mfa_capable: bool = False
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "UserRegistration":
+        return cls(
+            user_principal_name=data.get("userPrincipalName"),
+            display_name=data.get("userDisplayName"),
+            user_type=(data.get("userType") or "").lower() or None,
+            is_admin=bool(data.get("isAdmin", False)),
+            is_mfa_registered=bool(data.get("isMfaRegistered", False)),
+            is_mfa_capable=bool(data.get("isMfaCapable", False)),
+        )
+
+
+class RoleMember(BaseModel):
+    id: str
+    display_name: str | None = None
+    user_principal_name: str | None = None
+
+
+class DirectoryRole(BaseModel):
+    """An activated directory role and its members (from /directoryRoles)."""
+
+    id: str
+    display_name: str
+    members: list[RoleMember] = Field(default_factory=list)
+
+    @property
+    def is_privileged(self) -> bool:
+        name = (self.display_name or "").lower()
+        return any(k in name for k in ("administrator", "admin"))
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "DirectoryRole":
+        members = []
+        for m in data.get("members", []):
+            members.append(
+                RoleMember(
+                    id=m.get("id", ""),
+                    display_name=m.get("displayName"),
+                    user_principal_name=m.get("userPrincipalName"),
+                )
+            )
+        return cls(
+            id=data.get("id", ""),
+            display_name=data.get("displayName", ""),
+            members=members,
+        )
+
+
 # --------------------------------------------------------------------------- #
 # Result shapes
 # --------------------------------------------------------------------------- #
@@ -255,6 +313,8 @@ class TenantData(BaseModel):
     skus: list[SubscribedSku] = Field(default_factory=list)
     subscriptions: list[Subscription] = Field(default_factory=list)
     users: list[User] = Field(default_factory=list)
+    user_registration: list[UserRegistration] = Field(default_factory=list)
+    directory_roles: list[DirectoryRole] = Field(default_factory=list)
     # Usage-report rows (populated only when experimental rules are enabled).
     active_user_detail: list[dict] = Field(default_factory=list)
     mailbox_usage_detail: list[dict] = Field(default_factory=list)
@@ -263,6 +323,8 @@ class TenantData(BaseModel):
     # Data-quality flags surfaced in the report.
     sign_in_activity_available: bool = True
     subscriptions_available: bool = True
+    mfa_data_available: bool = True
+    roles_available: bool = True
     report_names_concealed: bool = False
 
 

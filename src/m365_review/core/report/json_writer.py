@@ -78,7 +78,27 @@ def build_json_payload(result: AuditResult) -> dict:
                 for s in result.subscriptions
             ],
         },
+        # Identity security (MFA + privileged roles) — machine-readable summary.
+        "identity_security": _identity_block(result),
         "caveats": result.caveats,
+    }
+
+
+def _identity_block(result: AuditResult) -> dict:
+    data = result.tenant_data
+    reg = data.user_registration if data else []
+    roles = [r for r in (data.directory_roles if data else []) if r.is_privileged]
+    return {
+        "mfa": {
+            "available": data.mfa_data_available if data else False,
+            "total_users": len(reg),
+            "without_mfa": sum(1 for u in reg if not u.is_mfa_registered),
+            "admins_without_mfa": sum(1 for u in reg if u.is_admin and not u.is_mfa_registered),
+        },
+        "privileged_roles": {
+            "available": data.roles_available if data else False,
+            "roles": [{"role": r.display_name, "member_count": len(r.members)} for r in roles],
+        },
     }
 
 
