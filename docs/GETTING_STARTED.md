@@ -66,11 +66,18 @@ Pick **one** of the options below. If you don't like the command line, use the
 
 ### Easiest — double-click (no commands)
 
-Copy the launcher bundle to the machine — two files:
-`Start-M365-Review.cmd` and (for offline use) `m365-license-review.tar` — then
-**double-click `Start-M365-Review.cmd`**. It loads the image (from the `.tar` if
-present, otherwise downloads it), starts the tool, and opens your browser.
-Requires Docker Desktop installed and running.
+Copy the launcher bundle to the machine, then double-click one of two files:
+
+- **`Setup-M365-Review.cmd`** — for a machine that **doesn't have Docker yet**. It
+  installs WSL2 + Docker Desktop (latest, via `winget` — needs internet + admin,
+  and usually **one reboot**; just double-click it again after rebooting to
+  finish), then **starts Docker, runs the tool, and opens your browser**.
+- **`Start-M365-Review.cmd`** — for a machine that **already has Docker Desktop**.
+  It loads the image (from the bundled `.tar` if present, otherwise downloads it),
+  starts the tool, and opens your browser.
+
+The offline bundle can also include `m365-license-review.tar` so no image download
+is needed (the Docker Desktop install in Setup still needs internet, though).
 
 **Prefer clicking inside Docker Desktop?** Go to the **Images** tab → on the
 `ghcr.io/<owner>/m365-license-review` row, click the **▶ (Run)** icon in the
