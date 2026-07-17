@@ -5,10 +5,10 @@ title M365 License Review - Setup (Rancher Desktop / no Docker Desktop license)
 REM ============================================================================
 REM  One-time SETUP + launcher using RANCHER DESKTOP - a free, open-source
 REM  container engine (no Docker Desktop license required).
-REM  Installs WSL2 + Rancher Desktop (via winget) if missing, configures the
-REM  Docker (moby) engine, then starts the tool and opens your browser.
-REM  Safe to run more than once. Needs internet + admin; usually one reboot.
-REM  (VS Code is NOT required - Rancher Desktop provides the docker CLI + a GUI.)
+REM  Checks what is installed BEFORE installing anything, then starts Rancher
+REM  Desktop, runs the tool, and opens your browser. Safe to run repeatedly.
+REM  Needs internet + admin; usually one reboot the first time.
+REM  (VS Code is NOT required.)
 REM ============================================================================
 
 REM --- relaunch elevated ---
@@ -48,7 +48,7 @@ if errorlevel 1 (
   pause & exit /b 1
 )
 
-REM --- WSL2 (Rancher Desktop needs it) ---
+REM --- WSL2 (check before installing) ---
 wsl --status >nul 2>&1
 if errorlevel 1 (
   echo Installing WSL2 ^(latest^)...
@@ -60,9 +60,9 @@ if errorlevel 1 (
 echo Updating WSL to the latest version...
 wsl --update >nul 2>&1
 
-REM --- Rancher Desktop (free / open-source) ---
-set "RD=%LOCALAPPDATA%\Programs\Rancher Desktop\Rancher Desktop.exe"
-if not exist "%RD%" (
+REM --- Rancher Desktop: find it first; install only if missing ---
+call :findRD
+if not defined RD (
   echo Installing Rancher Desktop ^(latest, free^)...
   winget install -e --id SUSE.RancherDesktop --accept-package-agreements --accept-source-agreements
   if errorlevel 1 (
@@ -70,6 +70,7 @@ if not exist "%RD%" (
     pause & exit /b 1
   )
   set "NEED_REBOOT=1"
+  call :findRD
 ) else (
   echo [ok] Rancher Desktop is installed.
 )
@@ -84,35 +85,41 @@ if defined NEED_REBOOT (
   pause & exit /b 0
 )
 
-REM --- locate rdctl + docker (Rancher puts docker in %%USERPROFILE%%\.rd\bin) ---
-set "RDCTL=%USERPROFILE%\.rd\bin\rdctl.exe"
-if not exist "%RDCTL%" set "RDCTL=%LOCALAPPDATA%\Programs\Rancher Desktop\resources\resources\win32\bin\rdctl.exe"
+if not defined RD (
+  echo Could not locate Rancher Desktop after installing. Open it once from the Start
+  echo menu, then double-click this file again.
+  pause & exit /b 1
+)
 
+REM --- locate rdctl + docker ---
+call :findRDCTL
 set "DOCKER="
 where docker >nul 2>&1 && set "DOCKER=docker"
-if not defined DOCKER if exist "%USERPROFILE%\.rd\bin\docker.exe" set "DOCKER=%USERPROFILE%\.rd\bin\docker.exe"
+if not defined DOCKER set "DOCKER=%USERPROFILE%\.rd\bin\docker.exe"
 
-REM --- configure the Docker (moby) engine + disable Kubernetes + start headless ---
-echo Starting Rancher Desktop with the Docker (moby) engine...
-"%RDCTL%" start --container-engine.name moby --kubernetes.enabled=false --application.start-in-background=true >nul 2>&1
+REM --- make sure the Docker (moby) engine is selected + Kubernetes off (best-effort) ---
+if defined RDCTL "%RDCTL%" set --container-engine.name moby --kubernetes.enabled=false >nul 2>&1
+
+REM --- START THE RANCHER DESKTOP APP (just like Docker Desktop) ---
+"%DOCKER%" info >nul 2>&1
 if errorlevel 1 (
-  echo Launching Rancher Desktop... if a first-run wizard appears, choose the
-  echo "dockerd (moby)" engine and turn Kubernetes OFF, then re-run this file.
+  echo Starting Rancher Desktop...
   start "" "%RD%"
 )
 
-REM --- wait for the engine ---
-echo Waiting for the container engine ^(first run can take a few minutes^)...
-if not defined DOCKER set "DOCKER=%USERPROFILE%\.rd\bin\docker.exe"
+REM --- wait for the engine to be ready ---
+echo Waiting for the Docker (moby) engine ^(first run can take a few minutes^)...
 set /a tries=0
 :wait
 "%DOCKER%" info >nul 2>&1
 if not errorlevel 1 goto ready
 set /a tries+=1
+REM once the backend is up, re-assert the moby engine in case it defaulted to containerd
+if !tries!==6 if defined RDCTL "%RDCTL%" set --container-engine.name moby --kubernetes.enabled=false >nul 2>&1
 if !tries! geq 90 (
   echo(
-  echo Engine not ready. Make sure Rancher Desktop is running with the dockerd/moby
-  echo engine ^(Preferences ^> Container Engine^), then double-click this file again.
+  echo Engine not ready. In Rancher Desktop, set Preferences ^> Container Engine to
+  echo "dockerd (moby)", wait for it to start, then double-click this file again.
   pause & exit /b 1
 )
 timeout /t 5 >nul
@@ -146,3 +153,18 @@ echo  Opening your browser...
 echo(
 echo  Next time: use Start-M365-Review.cmd. To stop: Rancher Desktop, or  docker stop m365-review.
 timeout /t 10 >nul
+exit /b 0
+
+REM ============================ subroutines ============================
+:findRD
+set "RD="
+if exist "%LOCALAPPDATA%\Programs\Rancher Desktop\Rancher Desktop.exe" set "RD=%LOCALAPPDATA%\Programs\Rancher Desktop\Rancher Desktop.exe"
+if not defined RD if exist "%ProgramFiles%\Rancher Desktop\Rancher Desktop.exe" set "RD=%ProgramFiles%\Rancher Desktop\Rancher Desktop.exe"
+goto :eof
+
+:findRDCTL
+set "RDCTL="
+if exist "%USERPROFILE%\.rd\bin\rdctl.exe" set "RDCTL=%USERPROFILE%\.rd\bin\rdctl.exe"
+if not defined RDCTL if exist "%LOCALAPPDATA%\Programs\Rancher Desktop\resources\resources\win32\bin\rdctl.exe" set "RDCTL=%LOCALAPPDATA%\Programs\Rancher Desktop\resources\resources\win32\bin\rdctl.exe"
+if not defined RDCTL if exist "%ProgramFiles%\Rancher Desktop\resources\resources\win32\bin\rdctl.exe" set "RDCTL=%ProgramFiles%\Rancher Desktop\resources\resources\win32\bin\rdctl.exe"
+goto :eof
