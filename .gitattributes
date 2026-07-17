@@ -10,3 +10,4 @@
 *.xlsx binary
 *.docx binary
 *.png binary
+*.cmd text eol=crlf

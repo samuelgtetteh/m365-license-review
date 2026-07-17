@@ -8,6 +8,9 @@
 # --- Internal build log (contains real client IDs / tenant names) ---
 PROGRESS.md
 
+# --- Exported Docker image tarballs (large; regenerate with `docker save`) ---
+*.tar
+
 # --- Generated reports (may contain client PII) ---
 reports/
 *.xlsx

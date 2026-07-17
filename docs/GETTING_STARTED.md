@@ -61,10 +61,23 @@ admin consents for their tenant the first time they sign in.
 
 ## Step 3 — Start the tool
 
-Pick **one** of the options below. **Option A needs nothing but Docker** — no
-files to download — so it's all you need if you only have this document.
+Pick **one** of the options below. If you don't like the command line, use the
+**double-click** option or the Docker Desktop buttons.
 
-### Option A — Just run it (recommended: only Docker + internet, no files)
+### Easiest — double-click (no commands)
+
+Copy the launcher bundle to the machine — two files:
+`Start-M365-Review.cmd` and (for offline use) `m365-license-review.tar` — then
+**double-click `Start-M365-Review.cmd`**. It loads the image (from the `.tar` if
+present, otherwise downloads it), starts the tool, and opens your browser.
+Requires Docker Desktop installed and running.
+
+**Prefer clicking inside Docker Desktop?** Go to the **Images** tab → on the
+`ghcr.io/<owner>/m365-license-review` row, click the **▶ (Run)** icon in the
+**Actions** column → expand **Optional settings** → set **Host port** to `8000` →
+**Run**. Then open the **Containers** tab and click the `8000:8000` port link.
+
+### Option A — One command (only Docker + internet, no files)
 
 Run this single command (same on Windows PowerShell, macOS, and Linux). It pulls
 the published image, configures itself, and starts:
