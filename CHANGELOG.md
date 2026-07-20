@@ -4,9 +4,9 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2026-07-17
 
-### Added — selectable audits (Phase 0) + security posture (Phase 1)
+### Added — selectable audits (Phase 0) + security posture (Phases 1–2)
 - **Selectable audits.** Every audit is now a catalog entry the operator ticks on
   the "Run audit" tab (grouped by category); the tool runs only the selected audits,
   fetches only the data they need, and **requests only the scopes they need**
@@ -103,6 +103,7 @@ Initial release.
   and a tenant-specific authority; tenants that block device code via Conditional
   Access should use the web app.
 
+[0.4.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.4.0
 [0.3.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.3.0
 [0.2.0]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.2.0
 [0.1.1]: https://github.com/samuelgtetteh/m365-license-review/releases/tag/v0.1.1

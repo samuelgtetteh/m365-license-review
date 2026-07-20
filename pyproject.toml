@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "m365-license-review"
-version = "0.3.0"
+version = "0.4.0"
 description = "Read-only Microsoft 365 license review & optimization tool for MSPs (web + CLI, containerized)."
 readme = "README.md"
 requires-python = ">=3.11"
