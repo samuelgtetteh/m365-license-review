@@ -20,6 +20,12 @@ from typing import Awaitable, Callable
 from m365_review.core.auth import TenantSession
 from m365_review.core.fetchers.organization import fetch_organization
 from m365_review.core.fetchers.skus import fetch_subscribed_skus
+from m365_review.core.fetchers.policies import (
+    fetch_auth_methods_policy,
+    fetch_ca_policies,
+    fetch_named_locations,
+    fetch_per_user_mfa,
+)
 from m365_review.core.fetchers.security import fetch_directory_roles, fetch_user_registration
 from m365_review.core.fetchers.subscriptions import fetch_subscriptions
 from m365_review.core.fetchers.users import fetch_users
@@ -64,6 +70,10 @@ async def fetch_tenant_data(
     users, sign_in_available = [], True
     registration, mfa_available = [], True
     roles, roles_available = [], True
+    ca_policies, ca_available = [], True
+    named_locations, named_locations_available = [], True
+    auth_methods, auth_methods_available = [], True
+    per_user_mfa, per_user_mfa_available = [], True
 
     async with GraphClient(session) as gc:
         await _emit(progress, "Reading tenant identity", 0.1)
@@ -90,7 +100,18 @@ async def fetch_tenant_data(
             await _emit(progress, "Reading admin roles", 0.78)
             roles, roles_available = await fetch_directory_roles(gc)
 
-        await _emit(progress, "Compiling tenant data", 0.82)
+        if want("ca_policies"):
+            await _emit(progress, "Reading Conditional Access policies", 0.8)
+            ca_policies, ca_available = await fetch_ca_policies(gc)
+        if want("named_locations"):
+            named_locations, named_locations_available = await fetch_named_locations(gc)
+        if want("auth_methods"):
+            auth_methods, auth_methods_available = await fetch_auth_methods_policy(gc)
+        if want("per_user_mfa"):
+            await _emit(progress, "Reading per-user MFA state", 0.82)
+            per_user_mfa, per_user_mfa_available = await fetch_per_user_mfa(gc, users)
+
+        await _emit(progress, "Compiling tenant data", 0.84)
 
     if session.tenant_display_name is None:
         session.tenant_display_name = org.display_name
@@ -103,10 +124,18 @@ async def fetch_tenant_data(
         users=users,
         user_registration=registration,
         directory_roles=roles,
+        ca_policies=ca_policies,
+        named_locations=named_locations,
+        auth_methods=auth_methods,
+        per_user_mfa=per_user_mfa,
         sign_in_activity_available=sign_in_available,
         subscriptions_available=subs_available,
         mfa_data_available=mfa_available,
         roles_available=roles_available,
+        ca_available=ca_available,
+        named_locations_available=named_locations_available,
+        auth_methods_available=auth_methods_available,
+        per_user_mfa_available=per_user_mfa_available,
     )
 
 
@@ -231,6 +260,11 @@ def _build_caveats(
         caveats.append(
             "Subscription expiration data was unavailable (the /directory/subscriptions "
             "endpoint did not return data for this tenant), so the expirations section is empty."
+        )
+    if not data.ca_available:
+        caveats.append(
+            "Conditional Access data was unavailable (Policy.Read.All not consented, or no rights), "
+            "so the CA-based audits were skipped."
         )
     if not data.mfa_data_available:
         caveats.append(

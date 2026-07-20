@@ -108,6 +108,7 @@ class Settings(BaseSettings):
         "Organization.Read.All",
         "AuditLog.Read.All",
         "Reports.Read.All",
+        "Policy.Read.All",
     )
 
     @property

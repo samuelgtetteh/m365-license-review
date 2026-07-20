@@ -61,4 +61,10 @@ def tenant_data() -> TenantData:
         user_registration=reg,
         directory_roles=roles,
         sign_in_activity_available=True,
+        # Phase-1 policy data isn't part of this base fixture; posture tests
+        # build their own. Mark it "not collected" so those audits stay inert here.
+        ca_available=False,
+        named_locations_available=False,
+        auth_methods_available=False,
+        per_user_mfa_available=False,
     )

@@ -81,13 +81,12 @@ Future/back-burner: R5 (E5 under-use), R6 (shared-mailbox size), all-users stale
 
 ## Phases
 
-### Phase 0 — Selectable-audit framework
-Audit-catalog model; "Select audits" tab with grouped checkboxes; scope-aware
-`/auth/login`; engine runs only selected audits and fetches only their data; CLI
-`--audit/--category/--all`; reports include only selected audits. Tests for the
-catalog + scope computation. *No new audits yet — refactor + UI.*
+### Phase 0 — Selectable-audit framework ✅ DONE
+Audit-catalog model; "Select audits" checkboxes; scope-aware `/auth/login`; engine
+runs only selected audits and fetches only their data; CLI `--audit`/`--category` +
+`audits` command. Tests for catalog + scope computation. *(shipped to master)*
 
-### Phase 1 — Conditional Access & policy audits (adds `Policy.Read.All`)
+### Phase 1 — Conditional Access & policy audits (adds `Policy.Read.All`) ✅ DONE
 Fetchers: `conditionalAccess/policies`, `conditionalAccess/namedLocations`,
 `policies/authenticationMethodsPolicy`, `users/{id}/authentication/requirements`.
 Audits: `sec-ca-require-mfa-all`, `sec-ca-block-legacy`, `sec-auth-methods-policy`,

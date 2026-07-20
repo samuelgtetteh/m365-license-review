@@ -237,6 +237,94 @@ class DirectoryRole(BaseModel):
         )
 
 
+GLOBAL_ADMIN_ROLE_TEMPLATE_ID = "62e90394-69f5-4237-9190-012177145e10"
+
+
+class ConditionalAccessPolicy(BaseModel):
+    id: str
+    display_name: str
+    state: str = ""                     # enabled | disabled | enabledForReportingButNotEnforced
+    include_users: list[str] = Field(default_factory=list)
+    exclude_users: list[str] = Field(default_factory=list)
+    include_roles: list[str] = Field(default_factory=list)
+    exclude_roles: list[str] = Field(default_factory=list)
+    include_groups: list[str] = Field(default_factory=list)
+    include_applications: list[str] = Field(default_factory=list)
+    client_app_types: list[str] = Field(default_factory=list)
+    grant_controls: list[str] = Field(default_factory=list)
+
+    @property
+    def is_enabled(self) -> bool:
+        return self.state == "enabled"
+
+    @property
+    def targets_all_users(self) -> bool:
+        return "All" in self.include_users
+
+    def targets_role(self, role_template_id: str) -> bool:
+        return role_template_id in self.include_roles
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "ConditionalAccessPolicy":
+        cond = data.get("conditions", {}) or {}
+        users = cond.get("users", {}) or {}
+        apps = cond.get("applications", {}) or {}
+        grant = data.get("grantControls") or {}
+        return cls(
+            id=data.get("id", ""),
+            display_name=data.get("displayName", ""),
+            state=data.get("state", ""),
+            include_users=users.get("includeUsers", []) or [],
+            exclude_users=users.get("excludeUsers", []) or [],
+            include_roles=users.get("includeRoles", []) or [],
+            exclude_roles=users.get("excludeRoles", []) or [],
+            include_groups=users.get("includeGroups", []) or [],
+            include_applications=apps.get("includeApplications", []) or [],
+            client_app_types=cond.get("clientAppTypes", []) or [],
+            grant_controls=(grant.get("builtInControls", []) or []),
+        )
+
+
+class NamedLocation(BaseModel):
+    id: str
+    display_name: str
+    location_type: str = "unknown"      # ip | country | unknown
+    is_trusted: bool = False
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "NamedLocation":
+        odata = (data.get("@odata.type") or "").lower()
+        if "ipnamedlocation" in odata:
+            ltype, trusted = "ip", bool(data.get("isTrusted", False))
+        elif "countrynamedlocation" in odata:
+            ltype, trusted = "country", False
+        else:
+            ltype, trusted = "unknown", bool(data.get("isTrusted", False))
+        return cls(
+            id=data.get("id", ""),
+            display_name=data.get("displayName", ""),
+            location_type=ltype,
+            is_trusted=trusted,
+        )
+
+
+class AuthMethodConfig(BaseModel):
+    id: str                              # e.g. MicrosoftAuthenticator, Sms, Voice, Fido2, Email
+    state: str = "disabled"              # enabled | disabled
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "AuthMethodConfig":
+        return cls(id=data.get("id", ""), state=data.get("state", "disabled"))
+
+
+class UserMfaRequirement(BaseModel):
+    """Legacy per-user MFA state from /users/{id}/authentication/requirements."""
+
+    user_principal_name: str | None = None
+    display_name: str | None = None
+    state: str = "disabled"              # disabled | enabled | enforced
+
+
 # --------------------------------------------------------------------------- #
 # Result shapes
 # --------------------------------------------------------------------------- #
@@ -315,6 +403,10 @@ class TenantData(BaseModel):
     users: list[User] = Field(default_factory=list)
     user_registration: list[UserRegistration] = Field(default_factory=list)
     directory_roles: list[DirectoryRole] = Field(default_factory=list)
+    ca_policies: list[ConditionalAccessPolicy] = Field(default_factory=list)
+    named_locations: list[NamedLocation] = Field(default_factory=list)
+    auth_methods: list[AuthMethodConfig] = Field(default_factory=list)
+    per_user_mfa: list[UserMfaRequirement] = Field(default_factory=list)
     # Usage-report rows (populated only when experimental rules are enabled).
     active_user_detail: list[dict] = Field(default_factory=list)
     mailbox_usage_detail: list[dict] = Field(default_factory=list)
@@ -325,6 +417,10 @@ class TenantData(BaseModel):
     subscriptions_available: bool = True
     mfa_data_available: bool = True
     roles_available: bool = True
+    ca_available: bool = True
+    named_locations_available: bool = True
+    auth_methods_available: bool = True
+    per_user_mfa_available: bool = True
     report_names_concealed: bool = False
 
 

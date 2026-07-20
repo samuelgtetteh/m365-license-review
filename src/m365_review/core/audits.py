@@ -20,6 +20,12 @@ from m365_review.core.rules import (
     r8_expiring_subscriptions,
     r9_users_without_mfa,
     r10_admin_audit,
+    r11_ca_require_mfa_all,
+    r12_ca_block_legacy,
+    r13_auth_methods_policy,
+    r14_trusted_locations,
+    r15_ga_mfa_coverage,
+    r16_peruser_mfa_state,
 )
 
 # Scopes always requested (sign-in + tenant identity).
@@ -32,6 +38,10 @@ DATA_SCOPES: dict[str, tuple[str, ...]] = {
     "users": ("User.Read.All", "AuditLog.Read.All"),
     "user_registration": ("AuditLog.Read.All",),
     "directory_roles": ("Directory.Read.All",),
+    "ca_policies": ("Policy.Read.All",),
+    "named_locations": ("Policy.Read.All",),
+    "auth_methods": ("Policy.Read.All",),
+    "per_user_mfa": ("Policy.Read.All",),
 }
 
 # Category display order for the UI.
@@ -83,6 +93,25 @@ CATALOG: list[AuditDef] = [
     AuditDef("idn-admin-audit", "Admin audit (MFA + count)", "Identity & access",
              "Admins without MFA, and too many Global Administrators.",
              r10_admin_audit, data=("user_registration", "directory_roles")),
+    AuditDef("idn-peruser-mfa-state", "Legacy per-user MFA state", "Identity & access",
+             "Accounts whose legacy per-user MFA state isn't 'enforced'.",
+             r16_peruser_mfa_state, data=("users", "per_user_mfa"), scopes=("Policy.Read.All",)),
+    # --- Security posture (Conditional Access & auth policy) ---
+    AuditDef("sec-ca-require-mfa-all", "CA requires MFA (all users)", "Security posture",
+             "An enabled CA policy requires MFA for all users and apps.",
+             r11_ca_require_mfa_all, data=("ca_policies",), scopes=("Policy.Read.All",)),
+    AuditDef("sec-ca-block-legacy", "CA blocks legacy authentication", "Security posture",
+             "An enabled CA policy blocks legacy auth clients.",
+             r12_ca_block_legacy, data=("ca_policies",), scopes=("Policy.Read.All",)),
+    AuditDef("sec-ga-mfa-coverage", "Global-admin MFA coverage", "Security posture",
+             "Global Administrators are covered by a CA MFA policy.",
+             r15_ga_mfa_coverage, data=("ca_policies",), scopes=("Policy.Read.All",)),
+    AuditDef("sec-auth-methods-policy", "Auth-methods policy alignment", "Security posture",
+             "Strong methods enabled, weak methods off.",
+             r13_auth_methods_policy, data=("auth_methods",), scopes=("Policy.Read.All",)),
+    AuditDef("sec-trusted-locations", "Trusted / named locations review", "Security posture",
+             "Review named locations marked trusted.",
+             r14_trusted_locations, data=("named_locations",), scopes=("Policy.Read.All",)),
 ]
 
 _BY_ID = {a.id: a for a in CATALOG}

@@ -72,8 +72,9 @@ registration the tool uses for every client tenant. It takes about 10 minutes.
    | `Directory.Read.All` | Read directory (licenses, users) |
    | `User.Read.All` | Read all users |
    | `Organization.Read.All` | Tenant name / verified domains |
-   | `AuditLog.Read.All` | Sign-in activity (for the inactivity rule) |
+   | `AuditLog.Read.All` | Sign-in activity, MFA registration report |
    | `Reports.Read.All` | Usage reports |
+   | `Policy.Read.All` | Conditional Access, auth-methods policy, named locations, per-user MFA state (security-posture audits) |
 
 3. You do **not** need to click "Grant admin consent" in your own tenant — each
    **client** admin consents for their own tenant the first time they sign in

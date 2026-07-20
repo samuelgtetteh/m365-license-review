@@ -117,10 +117,16 @@
           <div class="feature"><span class="tag high">R9</span><h3>Users without MFA</h3><p>Member accounts with no registered MFA method — a top account-takeover risk.</p></div>
           <div class="feature"><span class="tag high">R10</span><h3>Admin audit</h3><p>Admins without MFA, and too many Global Administrators (least-privilege).</p></div>
           <div class="feature"><span class="tag info">✓</span><h3>Paid vs. free split</h3><p>Free/self-service SKUs and inactive subscriptions are separated, not counted as spend.</p></div>
+          <div class="feature"><span class="tag high">R11</span><h3>CA requires MFA (all users)</h3><p>An enabled Conditional Access policy requires MFA for all users and apps.</p></div>
+          <div class="feature"><span class="tag high">R12</span><h3>CA blocks legacy auth</h3><p>An enabled CA policy blocks legacy authentication clients (which bypass MFA).</p></div>
+          <div class="feature"><span class="tag high">R15</span><h3>Global-admin MFA coverage</h3><p>Admins are covered by a CA MFA policy.</p></div>
+          <div class="feature"><span class="tag med">R13</span><h3>Auth-methods policy</h3><p>Strong methods enabled, weak/phishable methods (SMS, Voice) off.</p></div>
+          <div class="feature"><span class="tag med">R14</span><h3>Trusted locations</h3><p>Review named locations that can bypass controls.</p></div>
+          <div class="feature"><span class="tag info">R16</span><h3>Per-user MFA state</h3><p>Legacy per-user MFA state (fine if you enforce via Conditional Access).</p></div>
         </div>
-        <p class="hint">Product names are shown in Microsoft's friendly form everywhere. Cost checks
-           plus identity-security checks (MFA, admin roles, guests). More (E5 under-use, oversized
-           mailboxes, legacy auth) are on the roadmap.</p>
+        <p class="hint">Pick exactly what to run on the <em>Run audit</em> tab. The Conditional Access,
+           auth-policy and per-user-MFA checks need the read-only <code>Policy.Read.All</code> scope —
+           the tool only requests it when you select one of them.</p>
       </div>
     </section>
 

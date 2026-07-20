@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added — selectable audits (Phase 0) + security posture (Phase 1)
+- **Selectable audits.** Every audit is now a catalog entry the operator ticks on
+  the "Run audit" tab (grouped by category); the tool runs only the selected audits,
+  fetches only the data they need, and **requests only the scopes they need**
+  (a licensing-only run never prompts for `Policy.Read.All`). CLI: `--audit`,
+  `--category`, and `m365-review audits` to list them.
+- **Conditional Access & policy audits** (new `Policy.Read.All` scope): require-MFA-all
+  (R11), block-legacy-auth (R12), global-admin MFA coverage (R15), auth-methods-policy
+  alignment (R13), trusted/named-locations review (R14), and legacy per-user MFA state
+  (R16, via `/users/{id}/authentication/requirements`). All degrade gracefully if the
+  scope isn't consented.
+
 ## [0.3.0] - 2026-07-16
 
 ### Added — identity-security audits
