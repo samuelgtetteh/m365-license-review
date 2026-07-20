@@ -26,6 +26,7 @@ from m365_review.core.rules import (
     r14_trusted_locations,
     r15_ga_mfa_coverage,
     r16_peruser_mfa_state,
+    r17_allowed_domains,
 )
 
 # Scopes always requested (sign-in + tenant identity).
@@ -42,6 +43,7 @@ DATA_SCOPES: dict[str, tuple[str, ...]] = {
     "named_locations": ("Policy.Read.All",),
     "auth_methods": ("Policy.Read.All",),
     "per_user_mfa": ("Policy.Read.All",),
+    "domains": ("Directory.Read.All",),
 }
 
 # Category display order for the UI.
@@ -112,6 +114,9 @@ CATALOG: list[AuditDef] = [
     AuditDef("sec-trusted-locations", "Trusted / named locations review", "Security posture",
              "Review named locations marked trusted.",
              r14_trusted_locations, data=("named_locations",), scopes=("Policy.Read.All",)),
+    AuditDef("sec-allowed-domains", "Verified / accepted domains", "Security posture",
+             "Review tenant domains; flag unverified/federated.",
+             r17_allowed_domains, data=("domains",)),
 ]
 
 _BY_ID = {a.id: a for a in CATALOG}

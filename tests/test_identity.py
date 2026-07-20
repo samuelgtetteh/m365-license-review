@@ -37,6 +37,22 @@ def test_r10_admins_without_mfa_and_too_many_ga(tenant_data, pricing, now):
     assert admins_no_mfa.severity.value == "high"
 
 
+def test_user_registration_parses_enriched_fields():
+    from m365_review.core.models import UserRegistration
+
+    u = UserRegistration.from_graph({
+        "userPrincipalName": "a@x.com", "userDisplayName": "A", "userType": "member",
+        "isAdmin": False, "isMfaRegistered": True, "isMfaCapable": True,
+        "defaultMfaMethod": "microsoftAuthenticatorPush",
+        "methodsRegistered": ["microsoftAuthenticatorPush", "windowsHelloForBusiness"],
+        "isSsprRegistered": True, "isPasswordlessCapable": True,
+        "isSystemPreferredAuthenticationMethodEnabled": True,
+    })
+    assert u.default_mfa_method == "microsoftAuthenticatorPush"
+    assert "windowsHelloForBusiness" in u.methods_registered
+    assert u.is_sspr_registered and u.is_passwordless_capable and u.is_system_preferred_enabled
+
+
 def test_identity_block_in_json(tenant_data, pricing, now):
     result = build_result(tenant_data, pricing=pricing, now=now)
     block = build_json_payload(result)["identity_security"]

@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 
 _MFA_PATH = (
     "/reports/authenticationMethods/userRegistrationDetails"
-    "?$select=userPrincipalName,userDisplayName,userType,isAdmin,isMfaRegistered,isMfaCapable"
+    "?$select=userPrincipalName,userDisplayName,userType,isAdmin,isMfaRegistered,isMfaCapable,"
+    "defaultMfaMethod,methodsRegistered,isSsprRegistered,isPasswordlessCapable,"
+    "isSystemPreferredAuthenticationMethodEnabled"
 )
 _ROLES_PATH = "/directoryRoles?$expand=members"
 

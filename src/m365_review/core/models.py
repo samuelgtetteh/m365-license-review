@@ -188,6 +188,11 @@ class UserRegistration(BaseModel):
     is_admin: bool = False
     is_mfa_registered: bool = False
     is_mfa_capable: bool = False
+    default_mfa_method: str | None = None
+    methods_registered: list[str] = Field(default_factory=list)
+    is_sspr_registered: bool = False
+    is_passwordless_capable: bool = False
+    is_system_preferred_enabled: bool = False
 
     @classmethod
     def from_graph(cls, data: dict) -> "UserRegistration":
@@ -198,6 +203,35 @@ class UserRegistration(BaseModel):
             is_admin=bool(data.get("isAdmin", False)),
             is_mfa_registered=bool(data.get("isMfaRegistered", False)),
             is_mfa_capable=bool(data.get("isMfaCapable", False)),
+            default_mfa_method=data.get("defaultMfaMethod"),
+            methods_registered=list(data.get("methodsRegistered", []) or []),
+            is_sspr_registered=bool(data.get("isSsprRegistered", False)),
+            is_passwordless_capable=bool(data.get("isPasswordlessCapable", False)),
+            is_system_preferred_enabled=bool(
+                data.get("isSystemPreferredAuthenticationMethodEnabled", False)
+            ),
+        )
+
+
+class Domain(BaseModel):
+    """A verified/accepted domain (from /domains)."""
+
+    id: str                              # the domain name, e.g. contoso.com
+    is_verified: bool = True
+    is_default: bool = False
+    is_admin_managed: bool = True
+    authentication_type: str | None = None    # Managed | Federated
+    supported_services: list[str] = Field(default_factory=list)
+
+    @classmethod
+    def from_graph(cls, data: dict) -> "Domain":
+        return cls(
+            id=data.get("id", ""),
+            is_verified=bool(data.get("isVerified", True)),
+            is_default=bool(data.get("isDefault", False)),
+            is_admin_managed=bool(data.get("isAdminManaged", True)),
+            authentication_type=data.get("authenticationType"),
+            supported_services=list(data.get("supportedServices", []) or []),
         )
 
 
@@ -407,6 +441,7 @@ class TenantData(BaseModel):
     named_locations: list[NamedLocation] = Field(default_factory=list)
     auth_methods: list[AuthMethodConfig] = Field(default_factory=list)
     per_user_mfa: list[UserMfaRequirement] = Field(default_factory=list)
+    domains: list[Domain] = Field(default_factory=list)
     # Usage-report rows (populated only when experimental rules are enabled).
     active_user_detail: list[dict] = Field(default_factory=list)
     mailbox_usage_detail: list[dict] = Field(default_factory=list)
@@ -421,6 +456,7 @@ class TenantData(BaseModel):
     named_locations_available: bool = True
     auth_methods_available: bool = True
     per_user_mfa_available: bool = True
+    domains_available: bool = True
     report_names_concealed: bool = False
 
 

@@ -17,6 +17,10 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   alignment (R13), trusted/named-locations review (R14), and legacy per-user MFA state
   (R16, via `/users/{id}/authentication/requirements`). All degrade gracefully if the
   scope isn't consented.
+- **Verified/accepted domains audit** (R17) — lists tenant domains, flags unverified
+  or federated ones (Directory.Read.All).
+- **Enriched MFA registration** — default method, methods registered, SSPR, passwordless,
+  and system-preferred flags, surfaced in the Excel MFA detail sheet.
 
 ## [0.3.0] - 2026-07-16
 

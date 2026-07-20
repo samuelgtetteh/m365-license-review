@@ -8,6 +8,7 @@ from m365_review.core import audits
 from m365_review.core.models import (
     AuthMethodConfig,
     ConditionalAccessPolicy,
+    Domain,
     GLOBAL_ADMIN_ROLE_TEMPLATE_ID,
     NamedLocation,
     Organization,
@@ -22,6 +23,7 @@ from m365_review.core.rules import (
     r14_trusted_locations,
     r15_ga_mfa_coverage,
     r16_peruser_mfa_state,
+    r17_allowed_domains,
 )
 from m365_review.core.rules.base import RuleContext
 
@@ -108,6 +110,20 @@ def test_r16_flags_not_enforced():
     assert len(f) == 1 and f[0].affected_count == 1 and f[0].severity.value == "info"
 
 
+# --- R17 domains ---
+def test_r17_flags_unverified_domains():
+    doms = [Domain(id="contoso.com", is_verified=True, is_default=True),
+            Domain(id="old.contoso.com", is_verified=False)]
+    f = r17_allowed_domains.evaluate(_ctx(domains=doms, domains_available=True))
+    assert len(f) == 1 and f[0].severity.value == "medium" and f[0].affected_count == 2
+
+
+def test_r17_all_verified_is_info():
+    doms = [Domain(id="contoso.com", is_verified=True, is_default=True)]
+    f = r17_allowed_domains.evaluate(_ctx(domains=doms, domains_available=True))
+    assert len(f) == 1 and f[0].severity.value == "info"
+
+
 # --- scope gating ---
 def test_policy_scope_only_when_posture_selected():
     lic = audits.resolve(ids=["lic-unassigned"])
@@ -115,3 +131,9 @@ def test_policy_scope_only_when_posture_selected():
     sec = audits.resolve(ids=["sec-ca-block-legacy"])
     assert "Policy.Read.All" in audits.required_scopes(sec)
     assert audits.required_data(sec) == {"ca_policies"}
+
+
+def test_domains_audit_uses_directory_scope_not_policy():
+    dom = audits.resolve(ids=["sec-allowed-domains"])
+    scopes = audits.required_scopes(dom)
+    assert "Directory.Read.All" in scopes and "Policy.Read.All" not in scopes

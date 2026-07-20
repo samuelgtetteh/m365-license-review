@@ -361,28 +361,33 @@ def _inactive_detail_sheet(ws: Worksheet, result: AuditResult) -> None:
 # --------------------------------------------------------------------------- #
 
 def _mfa_sheet(ws: Worksheet, result: AuditResult) -> None:
-    headers = ["Display name", "User principal name", "Type", "Admin", "MFA registered"]
+    headers = ["Display name", "User principal name", "Type", "Admin", "MFA registered",
+               "Default method", "Methods registered", "SSPR reg."]
+    widths = [26, 40, 9, 7, 14, 18, 30, 10]
     _header_row(ws, 1, headers)
     data = result.tenant_data
     reg = data.user_registration if data else []
     if data and not data.mfa_data_available:
         ws.cell(row=2, column=1, value="MFA registration data was unavailable for this tenant.").font = _SUBTLE
-        _autosize(ws, [26, 42, 10, 8, 16]); return
+        _autosize(ws, widths); return
     if not reg:
         ws.cell(row=2, column=1, value="(no registration data)").font = _SUBTLE
-        _autosize(ws, [26, 42, 10, 8, 16]); return
+        _autosize(ws, widths); return
     row = 2
     for u in sorted(reg, key=lambda r: (r.is_mfa_registered, not r.is_admin)):
         ws.cell(row=row, column=1, value=u.display_name)
         ws.cell(row=row, column=2, value=u.user_principal_name)
         ws.cell(row=row, column=3, value=(u.user_type or "").capitalize())
         ws.cell(row=row, column=4, value="Yes" if u.is_admin else "")
-        c = ws.cell(row=row, column=5, value="Yes" if u.is_mfa_registered else "No")
+        ws.cell(row=row, column=5, value="Yes" if u.is_mfa_registered else "No")
+        ws.cell(row=row, column=6, value=u.default_mfa_method or "")
+        ws.cell(row=row, column=7, value=", ".join(u.methods_registered))
+        ws.cell(row=row, column=8, value="Yes" if u.is_sspr_registered else "")
         if not u.is_mfa_registered:
             for col in range(1, len(headers) + 1):
                 ws.cell(row=row, column=col).fill = _HIGH_FILL if u.is_admin else _MED_FILL
         row += 1
-    _autosize(ws, [26, 42, 10, 8, 16])
+    _autosize(ws, widths)
 
 
 def _admin_roles_sheet(ws: Worksheet, result: AuditResult) -> None:

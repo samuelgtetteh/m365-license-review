@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Awaitable, Callable
 
 from m365_review.core.auth import TenantSession
-from m365_review.core.fetchers.organization import fetch_organization
+from m365_review.core.fetchers.organization import fetch_domains, fetch_organization
 from m365_review.core.fetchers.skus import fetch_subscribed_skus
 from m365_review.core.fetchers.policies import (
     fetch_auth_methods_policy,
@@ -74,6 +74,7 @@ async def fetch_tenant_data(
     named_locations, named_locations_available = [], True
     auth_methods, auth_methods_available = [], True
     per_user_mfa, per_user_mfa_available = [], True
+    domains, domains_available = [], True
 
     async with GraphClient(session) as gc:
         await _emit(progress, "Reading tenant identity", 0.1)
@@ -111,6 +112,9 @@ async def fetch_tenant_data(
             await _emit(progress, "Reading per-user MFA state", 0.82)
             per_user_mfa, per_user_mfa_available = await fetch_per_user_mfa(gc, users)
 
+        if want("domains"):
+            domains, domains_available = await fetch_domains(gc)
+
         await _emit(progress, "Compiling tenant data", 0.84)
 
     if session.tenant_display_name is None:
@@ -128,6 +132,7 @@ async def fetch_tenant_data(
         named_locations=named_locations,
         auth_methods=auth_methods,
         per_user_mfa=per_user_mfa,
+        domains=domains,
         sign_in_activity_available=sign_in_available,
         subscriptions_available=subs_available,
         mfa_data_available=mfa_available,
@@ -136,6 +141,7 @@ async def fetch_tenant_data(
         named_locations_available=named_locations_available,
         auth_methods_available=auth_methods_available,
         per_user_mfa_available=per_user_mfa_available,
+        domains_available=domains_available,
     )
 
 

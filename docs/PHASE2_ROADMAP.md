@@ -94,9 +94,10 @@ Audits: `sec-ca-require-mfa-all`, `sec-ca-block-legacy`, `sec-auth-methods-polic
 Each: pass/fail + evidence (policy name, targeted users, exclusions), graceful 403
 note if the scope wasn't consented. Update `AZURE_SETUP.md` (new scope). Fixtures + tests.
 
-### Phase 2 — Domains + richer MFA
-`sec-allowed-domains` (verified/accepted domains vs expected). Enrich
-`idn-mfa-registration` with default method, SSPR, passwordless, capable-but-not-registered.
+### Phase 2 — Domains + richer MFA ✅ DONE
+`sec-allowed-domains` (R17 — verified/accepted domains, flags unverified/federated).
+Enriched MFA registration (default method, methods registered, SSPR, passwordless,
+system-preferred) surfaced in the Excel MFA detail sheet.
 
 ### Phase 3 — Exchange Online (clickable card)
 Read-only EXO integration (delegated). A **card/action** "Run Exchange Online check"
