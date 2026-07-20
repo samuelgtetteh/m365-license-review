@@ -63,6 +63,26 @@
           </fieldset>
 
           <fieldset>
+            <legend>Audits to run <span class="opt">(tick what to audit)</span></legend>
+            <div class="audit-actions">
+              <button type="button" class="ghost" id="sel-all">Select all</button>
+              <button type="button" class="ghost" id="sel-none">Clear</button>
+            </div>
+            {% for category, items in audit_categories.items() %}
+            <div class="audit-group">
+              <div class="audit-group-head">{{ category }}</div>
+              {% for a in items %}
+              <label class="chk" title="{{ a.description }}">
+                <input type="checkbox" name="audits" value="{{ a.id }}" checked class="audit-cb" />
+                {{ a.title }}
+                {% if a.scopes %}<span class="scope-badge" title="Needs extra permission">extra scope</span>{% endif %}
+              </label>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </fieldset>
+
+          <fieldset>
             <legend>Output formats</legend>
             <label class="chk"><input type="checkbox" name="formats" value="xlsx" checked /> Excel (.xlsx)</label>
             <label class="chk"><input type="checkbox" name="formats" value="docx" checked /> Word (.docx)</label>
@@ -182,11 +202,23 @@ docker compose run --rm m365-review m365-review profiles list</code></pre>
     }
     if (select) select.addEventListener('change', () => { syncProfileUI(); rebuildCli(); });
 
+    // Select-all / clear for audit checkboxes.
+    const auditCbs = [...form.querySelectorAll('.audit-cb')];
+    const selAll = document.getElementById('sel-all');
+    const selNone = document.getElementById('sel-none');
+    if (selAll) selAll.addEventListener('click', () => { auditCbs.forEach(c => c.checked = true); rebuildCli(); });
+    if (selNone) selNone.addEventListener('click', () => { auditCbs.forEach(c => c.checked = false); rebuildCli(); });
+
     function rebuildCli() {
       const fmts = [...form.querySelectorAll('input[name="formats"]:checked')].map(i => i.value);
       const exp = form.querySelector('input[name="experimental"]').checked;
+      const chosen = auditCbs.filter(c => c.checked);
       let cmd = 'm365-review run';
       if (select && select.value && select.value !== '__new__') cmd += ` --profile "${select.value}"`;
+      // Only add --audit flags if it's a partial selection (all = default).
+      if (chosen.length && chosen.length < auditCbs.length) {
+        for (const c of chosen) cmd += ` --audit ${c.value}`;
+      }
       for (const f of fmts) cmd += ` --format ${f}`;
       if (exp) cmd += ' --enable-experimental-rules';
       cli.textContent = cmd;

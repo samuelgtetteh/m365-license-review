@@ -26,7 +26,7 @@ from m365_review.core.fetchers.users import fetch_users
 from m365_review.core.graph_client import GraphClient
 from m365_review.core.models import AuditResult, SkuInventoryRow, TenantData
 from m365_review.core.pricing import PricingCatalog, load_pricing
-from m365_review.core.rules import run_all
+from m365_review.core.rules import run_rules
 from m365_review.core.rules.base import RuleContext
 
 logger = logging.getLogger(__name__)
@@ -50,26 +50,45 @@ async def _emit(progress: ProgressFn | None, label: str, fraction: float) -> Non
 async def fetch_tenant_data(
     session: TenantSession,
     *,
+    needed: set[str] | None = None,
     experimental: bool = False,
     progress: ProgressFn | None = None,
 ) -> TenantData:
-    """Fetch everything the rules need from the tenant (read-only)."""
+    """Fetch tenant data (read-only). ``needed`` limits which data units are fetched;
+    None fetches everything (back-compat)."""
+    def want(unit: str) -> bool:
+        return needed is None or unit in needed
+
+    skus = []
+    subscriptions, subs_available = [], True
+    users, sign_in_available = [], True
+    registration, mfa_available = [], True
+    roles, roles_available = [], True
+
     async with GraphClient(session) as gc:
         await _emit(progress, "Reading tenant identity", 0.1)
         org = await fetch_organization(gc)
 
-        await _emit(progress, "Reading subscribed licenses", 0.3)
-        skus = await fetch_subscribed_skus(gc)
+        if want("skus"):
+            await _emit(progress, "Reading subscribed licenses", 0.3)
+            skus = await fetch_subscribed_skus(gc)
 
-        await _emit(progress, "Reading subscription expiration dates", 0.45)
-        subscriptions, subs_available = await fetch_subscriptions(gc)
+        if want("subscriptions"):
+            await _emit(progress, "Reading subscription expiration dates", 0.45)
+            subscriptions, subs_available = await fetch_subscriptions(gc)
 
-        await _emit(progress, "Reading users and license assignments", 0.6)
-        users_result = await fetch_users(gc)
+        if want("users"):
+            await _emit(progress, "Reading users and license assignments", 0.6)
+            users_result = await fetch_users(gc)
+            users, sign_in_available = users_result.users, users_result.sign_in_activity_available
 
-        await _emit(progress, "Reading MFA registration & admin roles", 0.72)
-        registration, mfa_available = await fetch_user_registration(gc)
-        roles, roles_available = await fetch_directory_roles(gc)
+        if want("user_registration"):
+            await _emit(progress, "Reading MFA registration", 0.72)
+            registration, mfa_available = await fetch_user_registration(gc)
+
+        if want("directory_roles"):
+            await _emit(progress, "Reading admin roles", 0.78)
+            roles, roles_available = await fetch_directory_roles(gc)
 
         await _emit(progress, "Compiling tenant data", 0.82)
 
@@ -81,10 +100,10 @@ async def fetch_tenant_data(
         tenant_id=session.tenant_id,
         skus=skus,
         subscriptions=subscriptions,
-        users=users_result.users,
+        users=users,
         user_registration=registration,
         directory_roles=roles,
-        sign_in_activity_available=users_result.sign_in_activity_available,
+        sign_in_activity_available=sign_in_available,
         subscriptions_available=subs_available,
         mfa_data_available=mfa_available,
         roles_available=roles_available,
@@ -101,10 +120,19 @@ def build_result(
     pricing: PricingCatalog | None = None,
     experimental: bool = False,
     now: datetime | None = None,
+    selected: list | None = None,
 ) -> AuditResult:
-    """Run the rules and assemble the AuditResult. Pure — safe for tests/notebooks."""
+    """Run the selected audits and assemble the AuditResult. Pure — safe for tests.
+
+    ``selected`` is a list of AuditDef; None runs all (non-experimental) audits.
+    """
+    from m365_review.core import audits as audit_catalog
+
     pricing = pricing or load_pricing()
     now = now or datetime.now(timezone.utc)
+    if selected is None:
+        selected = audit_catalog.resolve(include_experimental=experimental)
+    selected_rules = [a.rule for a in selected]
 
     active_skus = [s for s in data.skus if s.is_active]
     inactive_skus = [s for s in data.skus if not s.is_active]
@@ -116,7 +144,7 @@ def build_result(
     # Scope-limiting (excluding inactive/free SKUs from counts) is handled inside
     # the individual rules and in the totals/inventory below.
     ctx = RuleContext(data=data, pricing=pricing, now=now, experimental_enabled=experimental)
-    findings = run_all(ctx)
+    findings = run_rules(ctx, selected_rules)
     # Inventory and totals still reflect active subscriptions only.
     inventory = _build_inventory(active_data, pricing)
     caveats = _build_caveats(active_data, pricing, inactive_skus=inactive_skus)
@@ -249,16 +277,27 @@ async def run_audit(
     formats: list[str],
     output_dir: Path,
     experimental: bool = False,
+    audit_ids: list[str] | None = None,
     progress: ProgressFn | None = None,
 ) -> tuple[AuditResult, dict[str, Path]]:
-    """Fetch -> rules -> AuditResult -> report files. Returns (result, {fmt: path})."""
+    """Fetch -> selected audits -> AuditResult -> report files. Returns (result, {fmt: path}).
+
+    ``audit_ids`` selects which audits to run (None = all). Only the data those
+    audits need is fetched.
+    """
+    from m365_review.core import audits as audit_catalog
     from m365_review.core.report import write_reports  # local import avoids cycle
 
-    pricing = load_pricing()
-    data = await fetch_tenant_data(session, experimental=experimental, progress=progress)
+    selected = audit_catalog.resolve(ids=audit_ids, include_experimental=experimental)
+    needed = audit_catalog.required_data(selected)
 
-    await _emit(progress, "Analyzing license optimization", 0.85)
-    result = build_result(data, pricing=pricing, experimental=experimental)
+    pricing = load_pricing()
+    data = await fetch_tenant_data(
+        session, needed=needed, experimental=experimental, progress=progress
+    )
+
+    await _emit(progress, "Analyzing", 0.85)
+    result = build_result(data, pricing=pricing, experimental=experimental, selected=selected)
 
     await _emit(progress, "Writing report(s)", 0.95)
     paths = write_reports(result, output_dir=output_dir, formats=formats)

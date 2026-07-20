@@ -22,6 +22,7 @@ from fastapi.templating import Jinja2Templates
 from sse_starlette.sse import EventSourceResponse
 
 from m365_review import __version__
+from m365_review.core import audits as audit_catalog
 from m365_review.core import auth as core_auth
 from m365_review.core.engine import run_audit
 from m365_review.core.profiles import get_store
@@ -95,6 +96,7 @@ async def index(request: Request) -> HTMLResponse:
             "redirect_uri": settings.azure_redirect_uri,
             "scopes": settings.graph_scopes,
             "profiles": profiles,
+            "audit_categories": audit_catalog.by_category(),
         },
     )
 
@@ -133,7 +135,12 @@ async def auth_login(request: Request) -> RedirectResponse:
             except ValueError as exc:
                 return _error_redirect(str(exc))
 
-    updates = {}
+    # Which audits to run → drives both the run and the scopes we request.
+    selected_ids = params.getlist("audits")
+    selected = audit_catalog.resolve(ids=selected_ids)
+    requested_scopes = tuple(audit_catalog.required_scopes(selected))
+
+    updates = {"graph_scopes": requested_scopes}
     if client_id:
         updates["azure_app_client_id"] = client_id
 
@@ -153,6 +160,7 @@ async def auth_login(request: Request) -> RedirectResponse:
         "client_id": client_id or settings.azure_app_client_id,
         "profile": active_profile,
         "redirect_uri": settings.azure_redirect_uri,
+        "audits": [a.id for a in selected],
     }
 
     try:
@@ -268,6 +276,7 @@ async def run_stream(request: Request) -> EventSourceResponse:
                     formats=session.options.get("formats", ["xlsx", "docx", "json"]),
                     output_dir=settings.output_dir,
                     experimental=session.options.get("experimental", False),
+                    audit_ids=session.options.get("audits"),
                     progress=progress,
                 )
                 session.reports = paths

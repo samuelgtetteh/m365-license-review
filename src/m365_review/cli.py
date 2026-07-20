@@ -136,6 +136,13 @@ def run(
         [OutputFormat.xlsx, OutputFormat.docx, OutputFormat.json],
         "--format", "-f", help="Output format(s). Repeatable.",
     ),
+    audit: list[str] = typer.Option(
+        None, "--audit", "-a",
+        help="Audit id(s) to run (repeatable). Default: all. See `m365-review audits`.",
+    ),
+    category: list[str] = typer.Option(
+        None, "--category", help="Run all audits in a category (repeatable)."
+    ),
     enable_experimental_rules: bool = typer.Option(
         False, "--enable-experimental-rules", help="Include rules R5-R7 (higher false-positive rate)."
     ),
@@ -149,6 +156,7 @@ def run(
     import asyncio
     import logging
 
+    from m365_review.core import audits as audit_catalog
     from m365_review.core.auth import AuthError, cli_interactive_auth
     from m365_review.core.engine import run_audit
     from m365_review.core.profiles import get_store
@@ -163,6 +171,19 @@ def run(
     settings = get_settings()
     out = output or settings.output_dir
     fmt_values = [f.value for f in formats]
+
+    # Resolve selected audits → drives both what runs and the scopes requested.
+    selected_audits = audit_catalog.resolve(
+        ids=audit or None, categories=category or None, include_experimental=enable_experimental_rules
+    )
+    if not selected_audits:
+        typer.secho("No matching audits for that selection. See `m365-review audits`.", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
+    audit_ids = [a.id for a in selected_audits]
+    settings = settings.model_copy(
+        update={"graph_scopes": tuple(audit_catalog.required_scopes(selected_audits))}
+    )
+    typer.echo(f"Audits: {', '.join(audit_ids)}")
 
     # Decide which client ID / profile to connect with, in priority order:
     #   --profile NAME  ->  --client-id ID  ->  interactive picker  ->  env default
@@ -255,6 +276,7 @@ def run(
             formats=fmt_values,
             output_dir=out,
             experimental=enable_experimental_rules,
+            audit_ids=audit_ids,
             progress=_progress,
         )
 
@@ -283,6 +305,19 @@ def run(
     except AuthError as exc:
         typer.secho(f"Authentication failed: {exc}", fg=typer.colors.RED)
         raise typer.Exit(code=1)
+
+
+@app.command(name="audits")
+def list_audits() -> None:
+    """List the available audits (ids + categories) for use with `run --audit`."""
+    from m365_review.core import audits as audit_catalog
+
+    for category, items in audit_catalog.by_category().items():
+        typer.secho(category, fg=typer.colors.CYAN, bold=True)
+        for a in items:
+            extra = "  [needs extra scope]" if a.scopes else ""
+            typer.echo(f"  {a.id:<22} {a.title}{extra}")
+        typer.echo("")
 
 
 @app.command(name="sku-check")

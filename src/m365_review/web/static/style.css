@@ -137,6 +137,15 @@ a { color: var(--accent); }
 .ticks li { padding-left: 1.4rem; position: relative; margin: .4rem 0; color: var(--ink); }
 .ticks li::before { content: "✓"; position: absolute; left: 0; color: #6cc04a; font-weight: 700; }
 
+/* ---- Audit selection ---- */
+.audit-actions { display: flex; gap: .5rem; margin: .2rem 0 .6rem; }
+.audit-actions .ghost { padding: .3rem .7rem; font-size: .8rem; }
+.audit-group { margin: .5rem 0 .7rem; }
+.audit-group-head { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ink-dim); border-bottom: 1px solid var(--border); padding-bottom: .25rem; margin-bottom: .35rem; }
+.scope-badge { font-size: .68rem; background: #6b5410; color: #ffe9a8; border-radius: 999px;
+  padding: .05rem .45rem; margin-left: .35rem; }
+
 /* ---- Theme toggle ---- */
 #theme-toggle { position: absolute; top: 1.4rem; right: 1.25rem; background: var(--card);
   border: 1px solid var(--border); color: var(--ink-dim); border-radius: 8px; padding: .35rem .7rem;

@@ -45,10 +45,10 @@ def applicable_rules(experimental_enabled: bool) -> list[Rule]:
     return [r for r in REGISTERED if experimental_enabled or not getattr(r, "experimental", False)]
 
 
-def run_all(ctx: RuleContext) -> list[Finding]:
-    """Evaluate all applicable rules; return findings sorted by severity (high first)."""
+def run_rules(ctx: RuleContext, rules: list[Rule]) -> list[Finding]:
+    """Evaluate a specific set of rules; return findings sorted by severity."""
     findings: list[Finding] = []
-    for rule in applicable_rules(ctx.experimental_enabled):
+    for rule in rules:
         try:
             produced = rule.evaluate(ctx)
             logger.info("Rule %s produced %d finding(s).", rule.rule_id, len(produced))
@@ -57,3 +57,8 @@ def run_all(ctx: RuleContext) -> list[Finding]:
             logger.exception("Rule %s failed; skipping.", getattr(rule, "rule_id", "?"))
     findings.sort(key=lambda f: (-f.severity.rank, f.rule_id))
     return findings
+
+
+def run_all(ctx: RuleContext) -> list[Finding]:
+    """Evaluate all applicable rules; return findings sorted by severity (high first)."""
+    return run_rules(ctx, applicable_rules(ctx.experimental_enabled))
