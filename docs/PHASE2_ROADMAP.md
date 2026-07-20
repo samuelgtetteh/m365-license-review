@@ -121,6 +121,31 @@ results tab. Findings still flow into the optimization summary where relevant.
 Version bump; CHANGELOG; docs (checkboxes, new scope, EXO card, AD agent);
 CI green; commit/push/tag → GHCR.
 
+### Phase 7 — Analytics & trends
+Builds on the selectable audits and the existing SQLite store.
+
+- **In-report analytics** (extends current): license **utilization %** per SKU + overall,
+  **savings breakdown** charts (by SKU and by category), **cost-at-risk** from expiring
+  subscriptions (30/60/90), and the **security posture score** (X of Y checks passed —
+  shared with Phase 5).
+- **Run-snapshot store (keystone).** Persist each run's `AuditResult` summary to a new
+  `audit_runs` table (keyed by profile + date). Everything below depends on this.
+- **Per-client trends.** Savings-identified-over-time, MFA coverage %, admin count,
+  findings-by-severity over time, and **"since last audit"** deltas (new / resolved
+  findings, newly-expiring subs).
+- **MSP fleet analytics.** Aggregate across all client profiles: total savings identified,
+  MFA-coverage leaderboard, clients missing block-legacy-auth / with too many Global
+  Admins, and per-client benchmark vs. fleet average.
+- **Web `/analytics` dashboard + BI export.** In-app charts (per-client trend + fleet
+  rollup) and a flattened CSV / Power BI-friendly export.
+
+**Sequencing:** the snapshot store is the prerequisite for trends/fleet. Slot Phase 7
+**after the audit phases (1–3)** so there's meaningful data to trend, but the in-report
+analytics + posture score can land alongside Phase 5. Can be pulled earlier if desired.
+
+Data/privacy note: snapshots are summaries (counts, totals, coverage %), stored locally
+in the same git-ignored SQLite DB as profiles — no new PII beyond what reports already hold.
+
 ---
 
 ## New scope & setup impact
@@ -156,5 +181,7 @@ CI green; commit/push/tag → GHCR.
 2. **Phase 1** (CA/policy + per-user MFA state) — the core of the reference docs.
 3. **Phase 2** (domains + MFA enrich).
 4. **Phase 3** (Exchange card).
-5. **Phase 4** (AD agent) and **Phase 5** (posture scorecard).
-6. **Phase 6** — release v0.4.0.
+5. **Phase 5** (posture scorecard) + **Phase 7** in-report analytics / snapshot store.
+6. **Phase 4** (AD agent).
+7. **Phase 7** per-client trends + fleet dashboard (needs a few runs of snapshot data).
+8. **Phase 6** — release v0.4.0 (cut once Phases 0–3 land; analytics can follow in 0.4.x/0.5.0).
