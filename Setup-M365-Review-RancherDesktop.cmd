@@ -127,6 +127,22 @@ goto wait
 :ready
 echo [ok] Docker (moby) engine is running via Rancher Desktop.
 
+REM --- offer to update to the latest version ---
+set "ans=Y"
+set /p "ans=Download and run the LATEST version? [Y/n]: "
+if /i "!ans!"=="n" (
+  echo Using the version already on this machine ^(if any^).
+) else (
+  echo Checking for the latest version, please wait...
+  "%DOCKER%" pull %IMAGE%
+  if errorlevel 1 (
+    echo Could not download. Using the version already on this machine ^(if any^).
+  ) else (
+    echo You are now on the latest version.
+    "%DOCKER%" rm -f m365-review >nul 2>&1
+  )
+)
+
 REM --- get the image (local -^> file -^> pull) ---
 "%DOCKER%" image inspect %IMAGE% >nul 2>&1
 if errorlevel 1 (
